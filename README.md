@@ -13,7 +13,7 @@ $ cat files/file      # go template file
 $ cat vars/file       # base variable file
 foo: bar
 value: some
-$ cat vars/dev/file   # variable file for environment 'dev'
+$ cat vars/dev/file   # variable file for environment 'dev' (will override values from base) (will override values from base)
 value: minimal
 $ naisplater dev files/ vars/ out/
 -- generated file ./out/file:
@@ -22,5 +22,5 @@ bar value is minimal
 
 - After processing the template, it will check the files for unresolved variables and error out if it finds any
 - Note that variable files _must_ have same name as template file
-- Uses [tsg/gotpl](https://github.com/tsg/gotpl) for processing go templates and [mikefarah/yq](https://github.com/mikefarah/yq) for merging yaml.
+- Uses [tsg/gotpl](https://github.com/tsg/gotpl) for processing go templates and [mikefarah/yq](https://github.com/mikefarah/yq) for merging yaml
 
