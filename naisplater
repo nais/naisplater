@@ -1,0 +1,76 @@
+#!/bin/bash
+#
+# util for processing golang templates
+
+ENV="${1}"
+TEMPLATES_DIR="${2}"
+VARS_DIR="${3}"
+OUTPUT_DIR="${4}"
+
+check_for_unresolved() {
+  local file="${1}"
+  if [[ $(grep -c "<no value>" "${file}") == "1" ]]; then
+    echo "error: found unresolved variable(s):" >&2
+    grep -Hn "<no value>" "${file}"
+    exit 1
+  fi
+}
+
+get_yaml() {
+  local file=${1}
+  local base_file="${VARS_DIR}/base/${file}" 
+  local env_override_file="${VARS_DIR}/${ENV}/${file}" 
+
+  # merge if both files exist
+  if [[  -f "${base_file}" &&  -f "${env_override_file}" ]]; then 
+    yq merge --overwrite "${base_file}" "${env_override_file}" 
+    return
+  fi  
+
+  if [[ -f "${base_file}" ]]; then
+    cat "${base_file}"
+    return
+  fi
+
+  if [[ -f "${env_override_file}" ]]; then
+    cat "${env_override_file}"
+    return
+  fi
+}
+
+print_help() {
+  cat <<EOF
+usage: naisplater [environment] [templates_dir] [variables_dir] [output_dir]
+
+environment           specifies which subdirectory in 'templates_dir' to merge/override yaml
+templates_dir         directory containing go template files
+variables_dir         directory containing yaml variable files. Environment specific overrides must go into sub dir variables_dir/<env>
+output_dir            folder to output processed templates
+
+EOF
+}
+
+main() {
+
+  # TODO: use getopts and flags instead
+  if [[ "${#}" != 4 ]]; then
+    echo "error: must provide all four arguments" >&2
+	print_help
+	exit 1
+  fi 
+
+  # ensure output dir exists
+  mkdir -p "${OUTPUT_DIR}"
+  
+  for file_path in "${TEMPLATES_DIR}"/*.yaml; do
+    local file_name=$(basename "${file_path}")  
+    local output_file="${OUTPUT_DIR}/${file_name}"
+
+    get_yaml "${file_name}" | gotpl "${file_path}" > "${output_file}"
+    check_for_unresolved "${output_file}"
+    echo "-- generated file ${output_file}:"
+    cat "${output_file}"
+  done
+}
+
+main "$@"
