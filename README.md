@@ -13,7 +13,7 @@ $ cat files/file      # go template file
 $ cat vars/file       # base variable file
 foo: bar
 value: some
-$ cat vars/dev/file   # variable file for environment 'dev' (will override values from base) (will override values from base)
+$ cat vars/dev/file   # variable file for environment 'dev' (will override values from base)
 value: minimal
 $ naisplater dev files/ vars/ out/
 -- generated file ./out/file:
