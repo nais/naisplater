@@ -53,8 +53,8 @@ main() {
   # TODO: use getopts and flags instead
   if [[ "${#}" != 4 ]]; then
     echo "error: must provide all four arguments" >&2
-	print_help
-	exit 1
+    print_help
+    exit 1
   fi 
 
   # ensure output dir exists
