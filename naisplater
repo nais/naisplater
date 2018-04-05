@@ -9,7 +9,7 @@ OUTPUT_DIR="${4}"
 
 check_for_unresolved() {
   local file="${1}"
-  if [[ $(grep -c "<no value>" "${file}") == "1" ]]; then
+  if [[ $(grep -c "<no value>" "${file}") > 0 ]]; then
     echo "error: found unresolved variable(s):" >&2
     grep -Hn "<no value>" "${file}"
     exit 1
@@ -18,7 +18,7 @@ check_for_unresolved() {
 
 get_yaml() {
   local file=${1}
-  local base_file="${VARS_DIR}/base/${file}" 
+  local base_file="${VARS_DIR}/${file}" 
   local env_override_file="${VARS_DIR}/${ENV}/${file}" 
 
   # merge if both files exist
