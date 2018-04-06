@@ -62,7 +62,7 @@ main() {
   # ensure output dir exists
   mkdir -p "${OUTPUT_DIR}"
   
-  for file_path in "${TEMPLATES_DIR}"/*.yaml; do
+  for file_path in $(find "${TEMPLATES_DIR}" "${TEMPLATES_DIR}/${ENV}" -type f -maxdepth 1 2> /dev/null); do
     local file_name=$(basename "${file_path}")  
     local output_file="${OUTPUT_DIR}/${file_name}"
 
