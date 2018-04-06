@@ -32,6 +32,8 @@ value: some
 $ cat vars/dev/file   # variable file for environment 'dev' (will override values from base)
 value: minimal
 $ naisplater dev templates/ vars/ out/
+-- generated file ./out/anotherfile:
+something
 -- generated file ./out/file:
 bar value is minimal 
 -- generated file ./out/anotherfile:
