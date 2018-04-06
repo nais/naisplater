@@ -42,15 +42,19 @@ print_help() {
   cat <<EOF
 usage: naisplater [environment] [templates_dir] [variables_dir] [output_dir]
 
-environment           specifies which subdirectory in 'templates_dir' to merge/override yaml
-templates_dir         directory containing go template files
-variables_dir         directory containing yaml variable files. Environment specific overrides must go into sub dir variables_dir/<env>
+environment           specifies which subdirectory in <templates_dir> to include files from,
+                      and which subdirectory in <variables_dir> to merge/override yaml with
+templates_dir         directory containing go template files. Environment specific files goes into <templates_dir>/<environment>
+variables_dir         directory containing yaml variable files. Environment specific overrides must go into sub dir <variables_dir>/<environment>
 output_dir            folder to output processed templates
 EOF
 }
 
 main() {
+  
   # TODO: use getopts and flags instead
+  if [[ "${1}" == "-h" || "${1}" == "--help" ]]; then print_help &&  exit 0; fi
+ 
   if [[ "${#}" != 4 ]]; then
     echo "error: must provide all four arguments" >&2
     print_help
