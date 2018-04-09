@@ -5,7 +5,7 @@ Tool for processing go templates
 
 # how it works
 
-It processes a directory of go template files using a directory with yaml files as input
+It processes a directory of go template files using a directory with yaml files as input, with the possibility to override both template files and variables for different environments.
 
 ```
 $ ./naisplater --help
@@ -18,27 +18,29 @@ variables_dir         directory containing yaml variable files. Environment spec
 output_dir            folder to output processed templates
 ```
 
-Full example:
+Full example (see also [test folder](https://github.com/nais/naisplater/tree/master/test))
 ```
 $ cat templates/file      # go template file
+value is {{ .value }} in environment {{ .environment }}
 {{ .foo }} value is {{ .value }}
 $ cat templates/anotherfile  # go template file
 something
 $ cat templates/dev/anotherfile # override anotherfile for environment 'dev' 
 overridden
 $ cat vars/file       # base variable file
-foo: bar
 value: some
+environment: base
 $ cat vars/dev/file   # variable file for environment 'dev' (will override values from base)
-value: minimal
+environment: dev
 $ naisplater dev templates/ vars/ out/
 -- generated file ./out/anotherfile:
 something
 -- generated file ./out/file:
-bar value is minimal 
+value is some in environment dev
 -- generated file ./out/anotherfile:
 overridden
 ```
+
 
 - After processing the template, it will check the files for unresolved variables and error out if it finds any
 - Note that variable files _must_ have same name as template file

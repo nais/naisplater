@@ -1,0 +1,7 @@
+#!/bin/bash
+
+TEST_FOLDER=${0%/*}
+
+rm -rf ${TEST_FOLDER}/out
+${TEST_FOLDER}/../naisplater dev ${TEST_FOLDER}/templates ${TEST_FOLDER}/vars ${TEST_FOLDER}/out > /dev/null
+diff ${TEST_FOLDER}/out ${TEST_FOLDER}/expected && echo "OK" || (echo "FAILED" && exit 1)

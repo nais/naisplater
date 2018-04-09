@@ -3,6 +3,11 @@ VERSION := $(shell cat ./version)
 NAME    := navikt/naisplater
 IMAGE   := ${NAME}:${VERSION}
 
+.PHONY: test bump build push
+
+test:
+	/bin/bash test/run
+
 bump:
 	/bin/bash bump.sh
 
@@ -11,3 +16,4 @@ build:
 
 push:
 	docker image push ${IMAGE}
+
