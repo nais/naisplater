@@ -2,11 +2,17 @@ SHELL   := bash
 VERSION := $(shell cat ./version)
 NAME    := navikt/naisplater
 IMAGE   := ${NAME}:${VERSION}
+ROOT_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 
 .PHONY: test bump build push
 
 test:
-	/bin/bash test/run
+	/bin/bash naisplater dev ./templates ./vars ./out > /dev/null
+	diff ./test/out ./test/expected && echo "OK" || (echo "FAILED" && exit 1)
+
+docker-test:
+	docker run -v ${ROOT_DIR}/test/templates:/templates -v ${ROOT_DIR}/test/vars:/vars -v ${ROOT_DIR}/test/out:/out --rm ${IMAGE} naisplater dev /templates /vars /out 
+	diff ./test/out ./test/expected && echo "OK" || (echo "FAILED" && exit 1)
 
 bump:
 	/bin/bash bump.sh
