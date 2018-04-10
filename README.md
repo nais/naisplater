@@ -1,5 +1,6 @@
 naisplater
 ==========
+[![Build Status](https://travis-ci.org/nais/naisplater.svg?branch=master)](https://travis-ci.org/nais/naisplater)
 
 Tool for processing go templates
 
