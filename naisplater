@@ -24,6 +24,8 @@ get_yaml() {
   local base_file="${VARS_DIR}/${file}" 
   local env_override_file="${VARS_DIR}/${ENV}/${file}" 
 
+  echo "env: ${ENV}"
+
   # merge if both files exist
   if [[  -f "${base_file}" &&  -f "${env_override_file}" ]]; then 
     yq merge --overwrite "${base_file}" "${env_override_file}" 
