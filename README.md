@@ -22,7 +22,7 @@ output_dir            folder to output processed templates
 Full example (see also [test folder](https://github.com/nais/naisplater/tree/master/test))
 ```
 $ cat templates/file      # go template file
-value is {{ .value }} in environment {{ .environment }}
+value is {{ .value }} in environment {{ .env }}
 {{ .foo }} value is {{ .value }}
 $ cat templates/anotherfile  # go template file
 something
@@ -30,20 +30,18 @@ $ cat templates/dev/anotherfile # override anotherfile for environment 'dev'
 overridden
 $ cat vars/file       # base variable file
 value: some
-environment: base
 $ cat vars/dev/file   # variable file for environment 'dev' (will override values from base)
-environment: dev
+value: overridden
 $ naisplater dev templates/ vars/ out/
 -- generated file ./out/anotherfile:
 something
 -- generated file ./out/file:
-value is some in environment dev
+value is overridden in environment dev
 -- generated file ./out/anotherfile:
 overridden
 ```
 
-
 - After processing the template, it will check the files for unresolved variables and error out if it finds any
 - Note that variable files _must_ have same name as template file
+- The environment provided as a argument is available as variable `{{ .env }}`
 - Uses [tsg/gotpl](https://github.com/tsg/gotpl) for processing go templates and [mikefarah/yq](https://github.com/mikefarah/yq) for merging yaml
-
