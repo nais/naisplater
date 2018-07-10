@@ -79,6 +79,11 @@ main() {
     local output_file="${OUTPUT_DIR}/${file_name}"
 
     get_yaml "${file_name}" | gotpl "${file_path}" > "${output_file}"
+    retVal=$?
+    if [ $retVal -ne 0 ]; then
+	exit $retVal
+    fi
+
     check_for_unresolved "${output_file}"
     echo "-- generated file ${output_file}:"
     cat "${output_file}"
