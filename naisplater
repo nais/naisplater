@@ -61,7 +61,6 @@ EOF
 }
 
 main() {
-  
   # TODO: use getopts and flags instead
   if [[ "${1}" == "-h" || "${1}" == "--help" ]]; then print_help &&  exit 0; fi
  
