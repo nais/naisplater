@@ -96,7 +96,14 @@ main() {
   for file_path in $(get_template_files); do
     local file_name=$(basename "${file_path}")  
     local output_file="${OUTPUT_DIR}/${file_name}"
+
     get_yaml "${file_name}" | decrypt | gotpl "${file_path}" > "${output_file}"
+
+    ret_val=$?
+    if [ $ret_val -ne 0 ]; then
+	  exit $ret_val
+    fi
+
     check_for_unresolved "${output_file}"
     echo "-- generated file ${output_file}:"
     cat "${output_file}"
