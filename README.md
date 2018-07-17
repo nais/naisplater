@@ -59,6 +59,7 @@ mysecret.enc: U2FsdGVkX1/wy7efToqNXuQjSBYCC8F0hMBdHTQFVc0=
 
 This variable will be exposed as `mysecret` during template interpolation.
 
+# note
 
 - After processing the template, it will check the files for unresolved variables and error out if it finds any
 - Note that variable files _must_ have same name as template file
