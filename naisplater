@@ -6,6 +6,7 @@ ENV="${1}"
 TEMPLATES_DIR="${2}"
 VARS_DIR="${3}"
 OUTPUT_DIR="${4}"
+DECRYPTION_KEY="${5:-''}"
 
 # tries to find "<no value>" (golang template marker for unresolved property) in provided file
 # if found, it prints the location and exits with code 1
@@ -48,24 +49,43 @@ get_template_files() {
   find "${TEMPLATES_DIR}" "${TEMPLATES_DIR}/${ENV}" -type f -maxdepth 1 2> /dev/null
 }
 
+decrypt() {
+  IFS=''
+  output=$(</dev/stdin)
+  
+  encrypted_vars=$(echo ${output} | grep "\.enc: ")
+  if [[ -z "${encrypted_vars}" ]]; then echo "${output}"; return; fi
+
+  while read -r line || [[ -n "$line" ]]; do
+      key=$(echo ${line} | cut -d":" -f1)
+      value=$(echo ${line} | cut -d" " -f2)
+      decrypted_value=$(echo ${value} | openssl enc -d -aes-256-cbc -a -k ${DECRYPTION_KEY} || echo "unable to decrypt: ${line}" 1>&2)
+      stripped_key=${key//.enc/}
+      output=$(echo -e "${output}\n${stripped_key}: ${decrypted_value}")
+  done <<< ${encrypted_vars}
+  
+  echo "${output}"
+}
+
 print_help() {
   cat <<EOF
-usage: naisplater [environment] [templates_dir] [variables_dir] [output_dir]
+usage: naisplater [environment] [templates_dir] [variables_dir] [output_dir] ([decryption key])
 
 environment           specifies which subdirectory in <templates_dir> to include files from,
                       and which subdirectory in <variables_dir> to merge/override yaml with
 templates_dir         directory containing go template files. Environment specific files goes into <templates_dir>/<environment>
 variables_dir         directory containing yaml variable files. Environment specific overrides must go into sub dir <variables_dir>/<environment>
 output_dir            folder to output processed templates
+decryption_key        secret to use for decrypting secret variables
 EOF
 }
 
 main() {
   # TODO: use getopts and flags instead
-  if [[ "${1}" == "-h" || "${1}" == "--help" ]]; then print_help &&  exit 0; fi
+  if [[ "${1}" == "-h" || "${1}" == "--help" ]]; then print_help && exit 0; fi
  
-  if [[ "${#}" != 4 ]]; then
-    echo "error: must provide all four arguments" >&2
+  if [[ "${#}" -lt "4" ]]; then
+    echo "error: must provide at least four arguments" >&2
     print_help
     exit 1
   fi 
@@ -77,10 +97,11 @@ main() {
     local file_name=$(basename "${file_path}")  
     local output_file="${OUTPUT_DIR}/${file_name}"
 
-    get_yaml "${file_name}" | gotpl "${file_path}" > "${output_file}"
-    retVal=$?
-    if [ $retVal -ne 0 ]; then
-	exit $retVal
+    get_yaml "${file_name}" | decrypt | gotpl "${file_path}" > "${output_file}"
+
+    ret_val=$?
+    if [ $ret_val -ne 0 ]; then
+	  exit $ret_val
     fi
 
     check_for_unresolved "${output_file}"

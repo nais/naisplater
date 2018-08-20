@@ -8,7 +8,7 @@ RUN go get github.com/tsg/gotpl
 FROM alpine:3.7
 
 RUN apk upgrade --update && \
-    apk add bash curl
+    apk add bash curl openssl
 
 ENV KUBECTL_VERSION="1.9.2"
 ENV YQ_VERSION="1.14.0"

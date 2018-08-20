@@ -10,13 +10,14 @@ It processes a directory of go template files using a directory with yaml files 
 
 ```
 $ ./naisplater --help
-usage: naisplater [environment] [templates_dir] [variables_dir] [output_dir]
+usage: naisplater [environment] [templates_dir] [variables_dir] [output_dir] ([decryption_key])
 
 environment           specifies which subdirectory in <templates_dir> to include files from,
                       and which subdirectory in <variables_dir> to merge/override yaml with
 templates_dir         directory containing go template files. Environment specific files goes into <templates_dir>/<environment>
 variables_dir         directory containing yaml variable files. Environment specific overrides must go into sub dir <variables_dir>/<environment>
 output_dir            folder to output processed templates
+decryption_key        secret to use for decrypting secret variables
 ```
 
 Full example (see also [test folder](https://github.com/nais/naisplater/tree/master/test))
@@ -40,6 +41,25 @@ value is overridden in environment dev
 -- generated file ./out/anotherfile:
 overridden
 ```
+
+## encrypted variables
+
+If you have secret variables, you can encrypt them and keep them under version control like any other variable.
+
+Encrypt your variables like this:
+```
+echo <your secret> | openssl enc -e -aes-256-cbc -a -k <your encryption key>
+```
+The encrypted string is then put as a variable with the key-suffix `.enc`
+
+Example:
+```
+mysecret.enc: U2FsdGVkX1/wy7efToqNXuQjSBYCC8F0hMBdHTQFVc0=
+```
+
+This variable will be exposed as `mysecret` during template interpolation.
+
+# note
 
 - After processing the template, it will check the files for unresolved variables and error out if it finds any
 - Note that variable files _must_ have same name as template file
