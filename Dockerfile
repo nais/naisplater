@@ -5,13 +5,13 @@ RUN apk upgrade --update && \
 
 RUN go get github.com/tsg/gotpl
 
-FROM alpine:3.7
+FROM alpine:3.8
 
 RUN apk upgrade --update && \
     apk add bash curl openssl
 
-ENV KUBECTL_VERSION="1.9.2"
-ENV YQ_VERSION="1.14.0"
+ENV KUBECTL_VERSION="1.10.7"
+ENV YQ_VERSION="2.1.2"
 
 RUN curl -Ls https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_linux_amd64 > /usr/bin/yq && \
     chmod +x /usr/bin/yq
