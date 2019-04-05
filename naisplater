@@ -105,8 +105,6 @@ main() {
     fi
 
     check_for_unresolved "${output_file}"
-    echo "-- generated file ${output_file}:"
-    cat "${output_file}"
   done
 }
 
