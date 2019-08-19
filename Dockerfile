@@ -10,7 +10,7 @@ FROM alpine:3.8
 RUN apk upgrade --update && \
     apk add bash curl openssl
 
-ENV KUBECTL_VERSION="1.14.0"
+ENV KUBECTL_VERSION="1.15.2"
 ENV YQ_VERSION="2.3.0"
 
 RUN curl -Ls https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_linux_amd64 > /usr/bin/yq && \
