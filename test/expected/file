@@ -1,1 +1,4 @@
-value is overridden in environment dev
+key: value is overridden in environment dev
+metadata:
+  labels:
+    nais.io/created-by: nais-yaml
