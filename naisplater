@@ -111,7 +111,7 @@ main() {
 
     ret_val=$?
     if [ $ret_val -ne 0 ]; then
-    exit $ret_val
+      exit $ret_val
     fi
 
     check_for_unresolved "${output_file}"
