@@ -12,7 +12,7 @@ DECRYPTION_KEY="${5:-''}"
 # if found, it prints the location and exits with code 1
 check_for_unresolved() {
   local file="${1}"
-  if [[ $(grep -c "<no value>" "${file}") > 0 ]]; then
+  if (( $(grep -c "<no value>" "${file}") > 0 )); then
     echo "error: found unresolved variable(s):" >&2
     grep -Hn "<no value>" "${file}"
     exit 1
@@ -56,18 +56,17 @@ get_template_files() {
 decrypt() {
   IFS=''
   output=$(</dev/stdin)
-
-  encrypted_vars=$(echo ${output} | grep "\.enc: ")
+  encrypted_vars=$(echo "${output}" | grep "\.enc: ")
   if [[ -z "${encrypted_vars}" ]]; then echo "${output}"; return; fi
 
   while read -r line || [[ -n "$line" ]]; do
-      key=$(echo ${line} | cut -d":" -f1)
-      value=$(echo ${line} | cut -d" " -f2)
-      decrypted_value=$(echo ${value} | openssl enc -d -aes-256-cbc -a -A -k ${DECRYPTION_KEY} || echo "unable to decrypt: ${line}" 1>&2)
+      key=$(echo "${line}" | cut -d":" -f1)
+      value=$(echo "${line}" | cut -d" " -f2)
+      decrypted_value=$(echo "${value}" | openssl enc -d -aes-256-cbc -a -A -k "${DECRYPTION_KEY}" || echo "unable to decrypt: ${line}" 1>&2)
       stripped_key=${key//.enc/}
       output=$(echo -e "${output}\n${stripped_key}: ${decrypted_value}")
-  done <<< ${encrypted_vars}
-
+  done <<< "${encrypted_vars}"
+  
   echo "${output}"
 }
 
@@ -79,12 +78,13 @@ environment           specifies which subdirectory in <templates_dir> to include
                       and which subdirectory in <variables_dir> to merge/override yaml with
 templates_dir         directory containing go template files. Environment specific files goes into <templates_dir>/<environment>
 variables_dir         directory containing yaml variable files. Environment specific overrides must go into sub dir <variables_dir>/<environment>
-output_dir            folder to output processed templates
+output_dir            folder to output processed templates (if folder exists with files, naisplater will not run)
 decryption_key        secret to use for decrypting secret variables
 EOF
 }
 
 main() {
+
   # TODO: use getopts and flags instead
   if [[ "${1}" == "-h" || "${1}" == "--help" ]]; then print_help && exit 0; fi
 
@@ -97,8 +97,14 @@ main() {
   # ensure output dir exists
   mkdir -p "${OUTPUT_DIR}"
 
+  if find "${OUTPUT_DIR}" -mindepth 1 | read -r; then
+    echo "error: output directory ${OUTPUT_DIR} is not empty, clean up before running"
+    exit 1
+  fi 
+  
   for file_path in $(get_template_files); do
-    local file_name=$(basename "${file_path}")
+    local file_name
+    file_name=$(basename "${file_path}")  
     local output_file="${OUTPUT_DIR}/${file_name}"
 
     get_yaml "${file_name}" | decrypt | gotpl "${file_path}" | add_created_by_label > "${output_file}"
