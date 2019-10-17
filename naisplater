@@ -19,19 +19,23 @@ check_for_unresolved() {
   fi
 }
 
+add_created_by_label() {
+  cat - | yq write -d '*' - "metadata.labels[nais.io/created-by]" nais-yaml
+}
+
 # gets yaml from base file and merges/overrides specific for environment if present
 get_yaml() {
   local file=${1}
-  local base_file="${VARS_DIR}/${file}" 
-  local env_override_file="${VARS_DIR}/${ENV}/${file}" 
+  local base_file="${VARS_DIR}/${file}"
+  local env_override_file="${VARS_DIR}/${ENV}/${file}"
 
   echo "env: ${ENV}"
 
   # merge if both files exist
-  if [[  -f "${base_file}" &&  -f "${env_override_file}" ]]; then 
-    yq merge --overwrite "${base_file}" "${env_override_file}" 
+  if [[  -f "${base_file}" &&  -f "${env_override_file}" ]]; then
+    yq merge --overwrite "${base_file}" "${env_override_file}"
     return
-  fi  
+  fi
 
   if [[ -f "${base_file}" ]]; then
     cat "${base_file}"
@@ -52,7 +56,6 @@ get_template_files() {
 decrypt() {
   IFS=''
   output=$(</dev/stdin)
-  
   encrypted_vars=$(echo "${output}" | grep "\.enc: ")
   if [[ -z "${encrypted_vars}" ]]; then echo "${output}"; return; fi
 
@@ -84,12 +87,12 @@ main() {
 
   # TODO: use getopts and flags instead
   if [[ "${1}" == "-h" || "${1}" == "--help" ]]; then print_help && exit 0; fi
- 
+
   if [[ "${#}" -lt "4" ]]; then
     echo "error: must provide at least four arguments" >&2
     print_help
     exit 1
-  fi 
+  fi
 
   # ensure output dir exists
   mkdir -p "${OUTPUT_DIR}"
@@ -104,11 +107,11 @@ main() {
     file_name=$(basename "${file_path}")  
     local output_file="${OUTPUT_DIR}/${file_name}"
 
-    get_yaml "${file_name}" | decrypt | gotpl "${file_path}" > "${output_file}"
+    get_yaml "${file_name}" | decrypt | gotpl "${file_path}" | add_created_by_label > "${output_file}"
 
     ret_val=$?
     if [ $ret_val -ne 0 ]; then
-	  exit $ret_val
+      exit $ret_val
     fi
 
     check_for_unresolved "${output_file}"

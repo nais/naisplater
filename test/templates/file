@@ -1,1 +1,1 @@
-value is {{ .value }} in environment {{ .env }}
+key: value is {{ .value }} in environment {{ .env }}

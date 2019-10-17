@@ -1,1 +1,4 @@
-overridden
+key: overridden
+metadata:
+  labels:
+    nais.io/created-by: nais-yaml
