@@ -1,0 +1,14 @@
+key: value
+metadata:
+  labels:
+    nais.io/created-by: nais-yaml
+---
+key2: value
+metadata:
+  labels:
+    nais.io/created-by: nais-yaml
+---
+key3: value
+metadata:
+  labels:
+    nais.io/created-by: nais-yaml
