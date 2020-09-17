@@ -7,6 +7,7 @@ TEMPLATES_DIR="${2}"
 VARS_DIR="${3}"
 OUTPUT_DIR="${4}"
 DECRYPTION_KEY="${5:-''}"
+NO_LABEL="${6}"
 
 # tries to find "<no value>" (golang template marker for unresolved property) in provided file
 # if found, it prints the location and exits with code 1
@@ -20,7 +21,11 @@ check_for_unresolved() {
 }
 
 add_created_by_label() {
-  cat - | yq write -d '*' - "metadata.labels[nais.io/created-by]" nais-yaml
+  if [[ -z $NO_LABEL ]]; then
+    cat - | yq write -d '*' - "metadata.labels[nais.io/created-by]" nais-yaml
+  else
+    cat -
+  fi
 }
 
 # gets yaml from base file and merges/overrides specific for environment if present
