@@ -1,0 +1,18 @@
+name: Create docker image
+
+on:
+  push:
+    branch: test
+
+jobs:
+  release:
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      IMAGE_NAME: naisplater
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Install gotpl
+      run: |
+        go get github.com/tsg/gotpl
