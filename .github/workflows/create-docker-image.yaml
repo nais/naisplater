@@ -3,6 +3,8 @@ name: Create docker image
 on:
   push:
     branch: test
+    paths-ignore:
+      - version
 
 jobs:
   docker:
@@ -14,17 +16,6 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v2
-    # - name: Install gotpl
-    #   run: |
-    #     go get github.com/tsg/gotpl
-    # - name: Install yq
-    #   run: |
-    #     mkdir -p $HOME/bin
-    #     curl -Ls https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_linux_amd64 -o $HOME/bin/yq && \
-    #     chmod +x $HOME/bin/yq
-    # - name: Set path
-    #   run: |
-    #     echo "PATH=/home/runner/go/bin:$HOME/bin:$PATH" >> $GITHUB_ENV
     - name: Bump version
       run: |
         make bump
@@ -34,3 +25,16 @@ jobs:
     - name: Run test
       run: |
         make docker-test
+    - name: Login GPR
+      run: |
+        docker login -u ${GITHUB_REPOSITORY} -p ${GITHUB_TOKEN} docker.pkg.github.com
+    - name: Push Docker image
+      run: |
+        make push
+    - name: Push updated version
+      run: |
+        git config --local user.email "TODO@todo.nais.io"
+        git config --local user.name "Github naisplater action"
+        git add version
+        git commit -m "ci/cd: pipeline update to version $(cat version)"
+        git push
