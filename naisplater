@@ -2,6 +2,8 @@
 #
 # util for processing golang templates
 
+set -o pipefail
+
 ENV="${1}"
 TEMPLATES_DIR="${2}"
 VARS_DIR="${3}"
