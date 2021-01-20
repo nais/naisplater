@@ -3,8 +3,12 @@ name: Create docker image
 on:
   push:
     branch: master
-    paths-ignore:
-      - version
+    paths:
+      - naisplater
+      - Makefile
+      - Dockerfile
+      - '.github/workflows/**'
+      - 'test/**'
 
 jobs:
   docker:

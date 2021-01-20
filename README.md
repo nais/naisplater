@@ -1,6 +1,6 @@
 naisplater
 ==========
-[![Build Status](https://github.com/nais/naisplater/workflows/Create%20docker%20image/badge.svg?branch=master)
+![Build Status](https://github.com/nais/naisplater/workflows/Create%20docker%20image/badge.svg?branch=master)
 
 Tool for processing go templates
 
