@@ -1,7 +1,7 @@
 SHELL   := bash
 VERSION := $(shell cat ./version)
 NAME    := naisplater
-IMAGE   := docker.pkg.github.com/${GITHUB_REPOSITORY}/${NAME}:${VERSION}
+IMAGE   := ghcr.io/nais/${NAME}:${VERSION}
 ROOT_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 
 .PHONY: test bump build push

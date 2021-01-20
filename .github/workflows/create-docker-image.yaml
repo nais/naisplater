@@ -11,6 +11,7 @@ jobs:
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       IMAGE_NAME: naisplater
+      GITHUB_OWNER: nais
       YQ_VERSION: 3.3.2
     runs-on: ubuntu-latest
     steps:
@@ -25,9 +26,12 @@ jobs:
     - name: Run test
       run: |
         make docker-test
-    - name: Login GPR
-      run: |
-        docker login -u ${GITHUB_REPOSITORY} -p ${GITHUB_TOKEN} docker.pkg.github.com
+    - name: Login to GitHub Packages Docker Registry
+      uses: docker/login-action@v1
+      with:
+        registry: ghcr.io
+        username: ${GITHUB_OWNER}
+        password: ${{ secrets.GITHUB_TOKEN }}
     - name: Push Docker image
       run: |
         make push
