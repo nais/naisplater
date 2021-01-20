@@ -16,8 +16,7 @@ jobs:
     - name: Install gotpl
       run: |
         go get github.com/tsg/gotpl
-        find .
-        env
+        find $GOROOT
     - name: Run test
       run: |
         make test
