@@ -19,11 +19,12 @@ jobs:
         go get github.com/tsg/gotpl
     - name: Install yq
       run: |
-        curl -Ls https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_linux_amd64 -o /usr/bin/yq && \
-        chmod +x /usr/bin/yq
+        mkdir -p $HOME/bin
+        curl -Ls https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_linux_amd64 -o $HOME/bin/yq && \
+        chmod +x $HOME/bin/yq
     - name: Set path
       run: |
-        echo "PATH=/home/runner/go/bin:$PATH" >> $GITHUB_ENV
+        echo "PATH=/home/runner/go/bin:$HOME/bin:$PATH" >> $GITHUB_ENV
     - name: Run test
       run: |
         make test
