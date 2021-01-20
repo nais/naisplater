@@ -2,7 +2,7 @@ name: Create docker image
 
 on:
   push:
-    branch: test
+    branch: master
     paths-ignore:
       - version
 
