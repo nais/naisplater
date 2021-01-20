@@ -5,7 +5,7 @@ on:
     branch: test
 
 jobs:
-  release:
+  docker:
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       IMAGE_NAME: naisplater
@@ -16,3 +16,6 @@ jobs:
     - name: Install gotpl
       run: |
         go get github.com/tsg/gotpl
+    - name: Run test
+      run: |
+        make test
