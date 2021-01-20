@@ -1,6 +1,6 @@
 SHELL   := bash
 VERSION := $(shell cat ./version)
-NAME    := navikt/naisplater
+NAME    := naisplater
 IMAGE   := ${NAME}:${VERSION}
 ROOT_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 
@@ -19,8 +19,8 @@ bump:
 	/bin/bash bump.sh
 
 build:
-	docker image build -t ${NAME} -t ${IMAGE} .
+	docker image build -t docker.pkg.github.com/${GITHUB_REPOSITORY}/${IMAGE} .
 
 push:
-	docker image push ${IMAGE}
+	docker image push docker.pkg.github.com/${GITHUB_REPOSITORY}/${IMAGE}
 
