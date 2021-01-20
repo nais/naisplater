@@ -1,7 +1,7 @@
 SHELL   := bash
 VERSION := $(shell cat ./version)
 NAME    := naisplater
-IMAGE   := ${NAME}:${VERSION}
+IMAGE   := docker.pkg.github.com/${GITHUB_REPOSITORY}/${NAME}:${VERSION}
 ROOT_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 
 .PHONY: test bump build push
@@ -19,8 +19,8 @@ bump:
 	/bin/bash bump.sh
 
 build:
-	docker image build -t docker.pkg.github.com/${GITHUB_REPOSITORY}/${IMAGE} .
+	docker image build -t ${IMAGE} .
 
 push:
-	docker image push docker.pkg.github.com/${GITHUB_REPOSITORY}/${IMAGE}
+	docker image push ${IMAGE}
 
