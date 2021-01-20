@@ -17,6 +17,7 @@ jobs:
       run: |
         go get github.com/tsg/gotpl
         find .
+        env
     - name: Run test
       run: |
         make test
