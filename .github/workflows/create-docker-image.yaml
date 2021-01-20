@@ -16,7 +16,9 @@ jobs:
     - name: Install gotpl
       run: |
         go get github.com/tsg/gotpl
-        find / -name gotpl -ls
+    - name: Set path
+      run: |
+        echo "PATH=/home/runner/go/bin:$PATH" >> $GITHUB_ENV
     - name: Run test
       run: |
         make test
