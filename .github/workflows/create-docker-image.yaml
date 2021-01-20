@@ -9,6 +9,7 @@ jobs:
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       IMAGE_NAME: naisplater
+      YQ_VERSION: 3.3.2
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
@@ -16,6 +17,10 @@ jobs:
     - name: Install gotpl
       run: |
         go get github.com/tsg/gotpl
+    - name: Install yq
+      run: |
+        curl -Ls https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_linux_amd64 -o /usr/bin/yq && \
+        chmod +x /usr/bin/yq
     - name: Set path
       run: |
         echo "PATH=/home/runner/go/bin:$PATH" >> $GITHUB_ENV
