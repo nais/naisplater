@@ -10,14 +10,19 @@ It processes a directory of go template files using a directory with yaml files 
 
 ```
 $ ./naisplater --help
-usage: naisplater [environment] [templates_dir] [variables_dir] [output_dir] ([decryption_key])
+usage: naisplater [options] [environment] [templates_dir] [variables_dir] [output_dir] ([decryption key])
 
 environment           specifies which subdirectory in <templates_dir> to include files from,
                       and which subdirectory in <variables_dir> to merge/override yaml with
 templates_dir         directory containing go template files. Environment specific files goes into <templates_dir>/<environment>
 variables_dir         directory containing yaml variable files. Environment specific overrides must go into sub dir <variables_dir>/<environment>
-output_dir            folder to output processed templates
+output_dir            folder to output processed templates (if folder exists with files, naisplater will not run)
 decryption_key        secret to use for decrypting secret variables
+
+Options:
+    -h|--help         show this help
+    -f|--filter       only process files matching this glob
+    -n|--no-label     do not add the nais.io/created-by label
 ```
 
 Full example (see also [test folder](https://github.com/nais/naisplater/tree/master/test))
