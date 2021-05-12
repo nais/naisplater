@@ -2,7 +2,8 @@ name: Create docker image
 
 on:
   push:
-    branch: master
+    branches:
+      - master
     paths:
       - naisplater
       - Makefile
