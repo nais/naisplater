@@ -8,7 +8,7 @@ ROOT_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 
 test:
 	rm -rf ./test/out/*
-	./naisplater dev ./test/templates ./test/vars ./test/out supersecret69
+	./naisplater --filter "*file" dev ./test/templates ./test/vars ./test/out supersecret69
 	diff ./test/out ./test/expected && echo "OK" || (echo "FAILED" && exit 1)
 
 docker-test:

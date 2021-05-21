@@ -4,13 +4,6 @@
 
 set -o pipefail
 
-ENV="${1}"
-TEMPLATES_DIR="${2}"
-VARS_DIR="${3}"
-OUTPUT_DIR="${4}"
-DECRYPTION_KEY="${5:-''}"
-NO_LABEL="${6}"
-
 # tries to find "<no value>" (golang template marker for unresolved property) in provided file
 # if found, it prints the location and exits with code 1
 check_for_unresolved() {
@@ -57,7 +50,7 @@ get_yaml() {
 
 # gets template files for base and specific for environment
 get_template_files() {
-  find "${TEMPLATES_DIR}" "${TEMPLATES_DIR}/${ENV}" -type f -maxdepth 1 2> /dev/null
+  find "${TEMPLATES_DIR}" "${TEMPLATES_DIR}/${ENV}" -type f ${FILTER:+-name "$FILTER"} -maxdepth 1 2> /dev/null
 }
 
 decrypt() {
@@ -79,7 +72,7 @@ decrypt() {
 
 print_help() {
   cat <<EOF
-usage: naisplater [environment] [templates_dir] [variables_dir] [output_dir] ([decryption key])
+usage: naisplater [options] [environment] [templates_dir] [variables_dir] [output_dir] ([decryption key])
 
 environment           specifies which subdirectory in <templates_dir> to include files from,
                       and which subdirectory in <variables_dir> to merge/override yaml with
@@ -87,19 +80,61 @@ templates_dir         directory containing go template files. Environment specif
 variables_dir         directory containing yaml variable files. Environment specific overrides must go into sub dir <variables_dir>/<environment>
 output_dir            folder to output processed templates (if folder exists with files, naisplater will not run)
 decryption_key        secret to use for decrypting secret variables
+
+Options:
+    -h|--help         show this help
+    -f|--filter       only process files matching this glob
+    -n|--no-label     do not add the nais.io/created-by label
 EOF
 }
 
 main() {
 
-  # TODO: use getopts and flags instead
-  if [[ "${1}" == "-h" || "${1}" == "--help" ]]; then print_help && exit 0; fi
+
+  if ! TEMP=$(getopt --name naisplater --options 'hnf:' --longoptions 'help,no-label,filter:' -- "$@"); then
+    echo "Error parsing arguments..." >&2
+    exit 1
+  fi
+
+  eval set -- "$TEMP"
+  unset TEMP
+
+  while true; do
+    case "$1" in
+      '-h'|'--help')
+        print_help
+        exit 0
+      ;;
+      '-n'|'--no-label')
+        NO_LABEL="1"
+        shift
+      ;;
+      '-f'|'--filter')
+        FILTER="${2}"
+        shift 2
+      ;;
+      '--')
+        shift
+        break
+      ;;
+      *)
+        echo "Invalid option: $1" >&2
+        exit 2
+      ;;
+    esac
+  done
 
   if [[ "${#}" -lt "4" ]]; then
     echo "error: must provide at least four arguments" >&2
     print_help
     exit 1
   fi
+
+  ENV="${1}"
+  TEMPLATES_DIR="${2}"
+  VARS_DIR="${3}"
+  OUTPUT_DIR="${4}"
+  DECRYPTION_KEY="${5:-''}"
 
   # ensure output dir exists
   mkdir -p "${OUTPUT_DIR}"
