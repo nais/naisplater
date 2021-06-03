@@ -51,18 +51,22 @@ overridden
 
 If you have secret variables, you can encrypt them and keep them under version control like any other variable.
 
-Encrypt your variables like this:
+
+Example usage (whose outputs also can be in-lined into yaml files):
 ```
-echo -n <your secret> | openssl enc -e -aes-256-cbc -a -md md5 -k <your encryption key>
+# Encrypt
+cat my-credentials.json | base64 -d | openssl enc -e -aes-256-cbc -a -md md5 -k <your encryption key>
+
+# Decrypt
+echo -n "<encrypted string>" | openssl enc -d -aes-256-cbc -a -md md5 -k <your encryption key>
 ```
-The encrypted string is then put as a variable with the key-suffix `.enc`
+
+Any yaml-key with the suffix `.enc`, (see example below) will be decrypted during template interpolation.
 
 Example:
 ```
 mysecret.enc: U2FsdGVkX1/wy7efToqNXuQjSBYCC8F0hMBdHTQFVc0=
 ```
-
-This variable will be exposed as `mysecret` during template interpolation.
 
 # note
 
