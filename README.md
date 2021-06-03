@@ -55,10 +55,10 @@ If you have secret variables, you can encrypt them and keep them under version c
 Example usage (whose outputs also can be in-lined into yaml files):
 ```
 # Encrypt
-cat my-credentials.json | base64 -d | openssl enc -e -aes-256-cbc -a -md md5 -k <your encryption key>
+cat my-credentials.json | base64 -d | openssl enc -e -aes-256-cbc -a -md md5 -A -k <your encryption key>
 
 # Decrypt
-echo -n "<encrypted string>" | openssl enc -d -aes-256-cbc -a -md md5 -k <your encryption key>
+echo -n "<encrypted string>" | openssl enc -d -aes-256-cbc -a -md md5 -A -k <your encryption key>
 ```
 
 Any yaml-key with the suffix `.enc`, (see example below) will be decrypted during template interpolation.
