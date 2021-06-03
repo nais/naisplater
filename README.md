@@ -53,7 +53,7 @@ If you have secret variables, you can encrypt them and keep them under version c
 
 Encrypt your variables like this:
 ```
-echo -n <your secret> | openssl enc -e -aes-256-cbc -a -A -k <your encryption key>
+echo -n <your secret> | openssl enc -e -aes-256-cbc -a -md md5 -k <your encryption key>
 ```
 The encrypted string is then put as a variable with the key-suffix `.enc`
 
