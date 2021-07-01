@@ -23,6 +23,7 @@ Options:
     -h|--help         show this help
     -f|--filter       only process files matching this glob
     -n|--no-label     do not add the nais.io/created-by label
+    -t|--touched-at   value to use for nais.io/touched-at label (default is current time)
 ```
 
 Full example (see also [test folder](https://github.com/nais/naisplater/tree/master/test))
@@ -73,4 +74,4 @@ mysecret.enc: U2FsdGVkX1/wy7efToqNXuQjSBYCC8F0hMBdHTQFVc0=
 - After processing the template, it will check the files for unresolved variables and error out if it finds any
 - Note that variable files _must_ have same name as template file
 - The environment provided as a argument is available as variable `{{ .env }}`
-- Uses [tsg/gotpl](https://github.com/tsg/gotpl) for processing go templates and [mikefarah/yq](https://github.com/mikefarah/yq) for merging yaml
+- Uses [tsg/gotpl](https://github.com/tsg/gotpl) for processing go templates and [mikefarah/yq](https://github.com/mikefarah/yq) (version 2.3.0) for merging yaml

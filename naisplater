@@ -15,9 +15,9 @@ check_for_unresolved() {
   fi
 }
 
-add_created_by_label() {
+add_labels() {
   if [[ -z $NO_LABEL ]]; then
-    cat - | yq write -d '*' - "metadata.labels[nais.io/created-by]" nais-yaml
+    cat - | yq write -d '*' - "metadata.labels[nais.io/created-by]" nais-yaml | yq write -d '*' - "metadata.labels[nais.io/touched-at]" "${TOUCHED_AT}"
   else
     cat -
   fi
@@ -84,14 +84,16 @@ decryption_key        secret to use for decrypting secret variables
 Options:
     -h|--help         show this help
     -f|--filter       only process files matching this glob
-    -n|--no-label     do not add the nais.io/created-by label
+    -n|--no-label     do not add the nais.io/ labels
+    -t|--touched-at   value to use for nais.io/touched-at label (default is current time)
 EOF
 }
 
 main() {
 
+  TOUCHED_AT=$(date --utc +%Y%m%dT%H%M%S)
 
-  if ! TEMP=$(getopt --name naisplater --options 'hnf:' --longoptions 'help,no-label,filter:' -- "$@"); then
+  if ! TEMP=$(getopt --name naisplater --options 'hnf:t:' --longoptions 'help,no-label,filter:,touched-at:' -- "$@"); then
     echo "Error parsing arguments..." >&2
     exit 1
   fi
@@ -111,6 +113,10 @@ main() {
       ;;
       '-f'|'--filter')
         FILTER="${2}"
+        shift 2
+      ;;
+      '-t'|'--touched-at')
+        TOUCHED_AT="${2}"
         shift 2
       ;;
       '--')
@@ -150,7 +156,7 @@ main() {
     local output_file="${OUTPUT_DIR}/${file_name}"
 
     echo "Parsing ${file_path} to create ${output_file}..." 1>&2
-    get_yaml "${file_name}" | decrypt | gotpl "${file_path}" | add_created_by_label > "${output_file}"
+    get_yaml "${file_name}" | decrypt | gotpl "${file_path}" | add_labels > "${output_file}"
 
     ret_val=$?
     if [ $ret_val -ne 0 ]; then

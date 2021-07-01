@@ -2,3 +2,4 @@ key: value is overridden in environment dev
 metadata:
   labels:
     nais.io/created-by: nais-yaml
+    nais.io/touched-at: testingtime
