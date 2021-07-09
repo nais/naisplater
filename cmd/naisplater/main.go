@@ -6,6 +6,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/pflag"
 	"os"
+	"path/filepath"
 	"text/template"
 )
 
@@ -14,6 +15,7 @@ type config struct {
 	templates string
 	variables string
 	output    string
+	cluster   string
 }
 
 func getconfig() (*config, error) {
@@ -23,6 +25,7 @@ func getconfig() (*config, error) {
 	pflag.StringVar(&cfg.templates, "templates", cfg.templates, "directory with templates")
 	pflag.StringVar(&cfg.variables, "variables", cfg.variables, "directory with variables")
 	pflag.StringVar(&cfg.output, "output", cfg.output, "which directory to write to")
+	pflag.StringVar(&cfg.cluster, "cluster", cfg.cluster, "cluster for rendering templates and variables")
 	pflag.BoolVar(&cfg.debug, "debug", cfg.debug, "enable debug output")
 	pflag.Parse()
 
@@ -34,6 +37,9 @@ func getconfig() (*config, error) {
 	}
 	if len(cfg.output) == 0 {
 		return nil, fmt.Errorf("--output required")
+	}
+	if len(cfg.cluster) == 0 {
+		return nil, fmt.Errorf("--cluster required")
 	}
 
 	return cfg, nil
@@ -54,7 +60,41 @@ func render(inFile, outFile string, vars templatetools.Variables) error {
 	// Nice API. Fail on undefined template variables.
 	tpl.Option("missingkey=error")
 
+	log.Debugf("Rendering %s to %s", inFile, outFile)
+
 	return tpl.Execute(out, vars)
+}
+
+func variablefilename(cluster string) string {
+	if len(cluster) == 0 {
+		return "vars.yaml"
+	}
+	return cluster + ".yaml"
+}
+
+func merge(dst, src map[string]string) {
+	for k, v := range src {
+		dst[k] = v
+	}
+}
+
+func directoryTemplates(directory string) (map[string]string, error) {
+	entries, err := os.ReadDir(directory)
+	if err != nil {
+		return nil, err
+	}
+
+	files := make(map[string]string)
+
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+		basename := entry.Name()
+		files[basename] = filepath.Join(directory, basename)
+	}
+
+	return files, nil
 }
 
 func run() error {
@@ -67,12 +107,67 @@ func run() error {
 		log.SetLevel(log.TraceLevel)
 	}
 
-	vars, err := templatetools.VariablesFromFiles(cfg.variables)
+	globals := filepath.Join(cfg.variables, variablefilename(""))
+	locals := filepath.Join(cfg.variables, variablefilename(cfg.cluster))
+
+	log.Debugf("Using global variables from %s", globals)
+	log.Debugf("Using cluster-override variables from %s", locals)
+
+	vars, err := templatetools.VariablesFromFiles(globals, locals)
 	if err != nil {
 		return err
 	}
 
-	return render(cfg.templates, cfg.output, vars)
+	log.Debugf("Decrypting variables")
+	err = templatetools.Decrypt(vars)
+	if err != nil {
+		return err
+	}
+
+	log.Debugf("Using templates from %s", cfg.templates)
+
+	templates, err := directoryTemplates(cfg.templates)
+	if err != nil {
+		return err
+	}
+
+	clusterTemplates := filepath.Join(cfg.templates, cfg.cluster)
+	overrides, err := directoryTemplates(clusterTemplates)
+	if err != nil {
+		if os.IsNotExist(err) {
+			log.Warnf("No cluster-specific template directory for '%s'", cfg.cluster)
+		} else {
+			return err
+		}
+	} else {
+		log.Debugf("Using cluster-override templates from %s", clusterTemplates)
+	}
+
+	merge(templates, overrides)
+
+	log.Debugf("Using output directory %s", cfg.output)
+	err = os.MkdirAll(cfg.output, 0755)
+	if err != nil {
+		return err
+	}
+
+	errors := 0
+	for filename, path := range templates {
+		output := filepath.Join(cfg.output, filename)
+		err = render(path, output, vars)
+		if err != nil {
+			errors++
+			log.Errorf("Render %s: %s", path, err)
+		} else {
+			log.Infof("Rendered %s", output)
+		}
+	}
+
+	if errors > 0 {
+		return fmt.Errorf("encountered %d errors; see log", errors)
+	}
+
+	return nil
 }
 
 func main() {
