@@ -19,7 +19,11 @@ func ReplaceVariables(r io.Reader, w io.Writer, prefix string) error {
 		}
 
 		if insideExpression && strings.HasPrefix(lit, ".") {
-			lit = prefix + lit
+			if lit == "." {
+				lit = prefix
+			} else {
+				lit = prefix + lit
+			}
 		}
 
 		_, err := w.Write([]byte(lit))

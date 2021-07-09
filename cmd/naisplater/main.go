@@ -7,6 +7,7 @@ import (
 	"github.com/spf13/pflag"
 	"os"
 	"path/filepath"
+	"sort"
 	"text/template"
 )
 
@@ -151,8 +152,15 @@ func run() error {
 		return err
 	}
 
+	filenames := make([]string, 0, len(templates))
+	for k := range templates {
+		filenames = append(filenames, k)
+	}
+	sort.Strings(filenames)
+
 	errors := 0
-	for filename, path := range templates {
+	for _, filename := range filenames {
+		path := templates[filename]
 		output := filepath.Join(cfg.output, filename)
 		err = render(path, output, vars)
 		if err != nil {

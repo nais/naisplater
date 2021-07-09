@@ -89,7 +89,7 @@ func processFile(cluster, component, path string) (*variableFile, error) {
 
 	result := &variableFile{
 		cluster:   cluster,
-		component: component,
+		component: strings.Replace(component, "-", "_", -1),
 	}
 
 	dec := yamlv2.NewDecoder(file)

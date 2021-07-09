@@ -54,6 +54,7 @@ func translate(inFile, outFile string) error {
 	if strings.HasSuffix(component, ext) {
 		component = component[:len(component)-len(ext)]
 	}
+	component = strings.Replace(component, "-", "_", -1)
 
 	return parser.ReplaceVariables(in, out, "."+component)
 }
@@ -75,6 +76,9 @@ func run() error {
 	}
 
 	walkFunc := func(path string, info fs.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
 		dest := strings.Replace(path, cfg.input, cfg.output, 1)
 		if info.IsDir() {
 			log.Debugf("Create directory %s", dest)

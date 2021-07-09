@@ -34,6 +34,10 @@ var parserTests = []struct {
 		`{{.prefix.single}}`,
 	},
 	{
+		`{{.}}`,
+		`{{.prefix}}`,
+	},
+	{
 		`{{.multiple.levels.in.variable}}`,
 		`{{.prefix.multiple.levels.in.variable}}`,
 	},
