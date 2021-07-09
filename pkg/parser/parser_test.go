@@ -42,8 +42,8 @@ var parserTests = []struct {
 		`{{ range $i, $cluster := .prefix.clusters }}`,
 	},
 	{
-		`{{ (.paranthesis) }}`,
-		`{{ (.prefix.paranthesis) }}`,
+		`{{ (.paranthesis!=.foo) }}`,
+		`{{ (.prefix.paranthesis!=.prefix.foo) }}`,
 	},
 }
 

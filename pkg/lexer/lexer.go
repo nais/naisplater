@@ -11,7 +11,7 @@ const (
 	TokenEnd = iota
 	TokenCurlyLeft
 	TokenCurlyRight
-	TokenParanthesis
+	TokenOperator
 	TokenWhitespace
 	TokenIdentifier
 )
@@ -24,8 +24,8 @@ func runeClass(r rune) int {
 	switch r {
 	case eof:
 		return TokenEnd
-	case '(', ')':
-		return TokenParanthesis
+	case '(', ')', '|', '=', '+', '-', '!':
+		return TokenOperator
 	case '{':
 		return TokenCurlyLeft
 	case '}':

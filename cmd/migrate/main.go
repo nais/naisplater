@@ -176,5 +176,6 @@ func main() {
 	err := run()
 	if err != nil {
 		log.Errorf("fatal: %s", err)
+		os.Exit(1)
 	}
 }
