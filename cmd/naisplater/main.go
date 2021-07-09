@@ -2,40 +2,59 @@ package main
 
 import (
 	"fmt"
+	"github.com/nais/naisplater/pkg/templatetools"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/pflag"
 	"os"
+	"text/template"
 )
 
 type config struct {
 	debug     bool
-	directory string
+	templates string
+	variables string
 	output    string
-}
-
-type variableFile struct {
-	cluster   string
-	component string
-	contents  map[string]interface{}
 }
 
 func getconfig() (*config, error) {
 	cfg := &config{
 	}
 
-	pflag.StringVar(&cfg.directory, "directory", cfg.directory, "which directory to process")
+	pflag.StringVar(&cfg.templates, "templates", cfg.templates, "directory with templates")
+	pflag.StringVar(&cfg.variables, "variables", cfg.variables, "directory with variables")
 	pflag.StringVar(&cfg.output, "output", cfg.output, "which directory to write to")
 	pflag.BoolVar(&cfg.debug, "debug", cfg.debug, "enable debug output")
 	pflag.Parse()
 
-	if len(cfg.directory) == 0 {
-		return nil, fmt.Errorf("--directory required")
+	if len(cfg.templates) == 0 {
+		return nil, fmt.Errorf("--templates required")
+	}
+	if len(cfg.variables) == 0 {
+		return nil, fmt.Errorf("--variables required")
 	}
 	if len(cfg.output) == 0 {
 		return nil, fmt.Errorf("--output required")
 	}
 
 	return cfg, nil
+}
+
+func render(inFile, outFile string, vars templatetools.Variables) error {
+	out, err := os.OpenFile(outFile, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0644)
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+
+	tpl, err := template.ParseFiles(inFile)
+	if err != nil {
+		return err
+	}
+
+	// Nice API. Fail on undefined template variables.
+	tpl.Option("missingkey=error")
+
+	return tpl.Execute(out, vars)
 }
 
 func run() error {
@@ -48,7 +67,12 @@ func run() error {
 		log.SetLevel(log.TraceLevel)
 	}
 
-	return nil
+	vars, err := templatetools.VariablesFromFiles(cfg.variables)
+	if err != nil {
+		return err
+	}
+
+	return render(cfg.templates, cfg.output, vars)
 }
 
 func main() {
