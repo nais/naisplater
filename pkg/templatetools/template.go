@@ -10,11 +10,13 @@ import (
 
 type Variables map[interface{}]interface{}
 
-func Decrypt(vars Variables) error {
+type DecryptionFunc func(ciphertext, key string) (plaintext string, err error)
+
+func Decrypt(vars Variables, password string, fn DecryptionFunc, translate bool) error {
 	for k, v := range vars {
 		switch typed := v.(type) {
 		case Variables:
-			err := Decrypt(typed)
+			err := Decrypt(typed, password, fn, translate)
 			if err != nil {
 				return fmt.Errorf("%s: %s", k, err)
 			}
@@ -25,8 +27,16 @@ func Decrypt(vars Variables) error {
 			}
 			if strings.HasSuffix(key, ".enc") {
 				log.Debugf("Decrypting variable '%s'", key)
-				vars[key[:len(key)-4]] = v
-				delete(vars, k)
+				plaintext, err := fn(typed, password)
+				if err != nil {
+					return fmt.Errorf("decryption error: %w", err)
+				}
+				if translate {
+					vars[key[:len(key)-4]] = plaintext
+					delete(vars, k)
+				} else {
+					vars[key] = plaintext
+				}
 			}
 		}
 	}

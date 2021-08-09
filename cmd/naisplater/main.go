@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/nais/naisplater/pkg/cryptutil"
 	"github.com/nais/naisplater/pkg/templatetools"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/pflag"
@@ -12,11 +13,12 @@ import (
 )
 
 type config struct {
-	debug     bool
-	templates string
-	variables string
-	output    string
-	cluster   string
+	debug         bool
+	templates     string
+	variables     string
+	output        string
+	cluster       string
+	decryptionKey string
 }
 
 func getconfig() (*config, error) {
@@ -27,6 +29,7 @@ func getconfig() (*config, error) {
 	pflag.StringVar(&cfg.variables, "variables", cfg.variables, "directory with variables")
 	pflag.StringVar(&cfg.output, "output", cfg.output, "which directory to write to")
 	pflag.StringVar(&cfg.cluster, "cluster", cfg.cluster, "cluster for rendering templates and variables")
+	pflag.StringVar(&cfg.decryptionKey, "decryption-key", cfg.decryptionKey, "key for decrypting variables")
 	pflag.BoolVar(&cfg.debug, "debug", cfg.debug, "enable debug output")
 	pflag.Parse()
 
@@ -120,7 +123,7 @@ func run() error {
 	}
 
 	log.Debugf("Decrypting variables")
-	err = templatetools.Decrypt(vars)
+	err = templatetools.Decrypt(vars, cfg.decryptionKey, cryptutil.DecryptWithPassword, true)
 	if err != nil {
 		return err
 	}

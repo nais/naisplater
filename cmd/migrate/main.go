@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"github.com/nais/naisplater/pkg/cryptutil"
+	"github.com/nais/naisplater/pkg/templatetools"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/pflag"
 	"os"
@@ -12,15 +14,16 @@ import (
 )
 
 type config struct {
-	debug     bool
-	directory string
-	output    string
+	debug         bool
+	directory     string
+	output        string
+	decryptionKey string
 }
 
 type variableFile struct {
 	cluster   string
 	component string
-	contents  map[string]interface{}
+	contents  map[interface{}]interface{}
 }
 
 func getconfig() (*config, error) {
@@ -29,6 +32,7 @@ func getconfig() (*config, error) {
 
 	pflag.StringVar(&cfg.directory, "directory", cfg.directory, "which directory to process")
 	pflag.StringVar(&cfg.output, "output", cfg.output, "which directory to write to")
+	pflag.StringVar(&cfg.decryptionKey, "decryption-key", cfg.decryptionKey, "decryption key for secrets")
 	pflag.BoolVar(&cfg.debug, "debug", cfg.debug, "enable debug output")
 	pflag.Parse()
 
@@ -42,7 +46,7 @@ func getconfig() (*config, error) {
 	return cfg, nil
 }
 
-func processDirectory(directory string) ([]*variableFile, error) {
+func processDirectory(directory, key string) ([]*variableFile, error) {
 	log.Debugf("found directory: %s", directory)
 
 	dirEntry, err := os.ReadDir(directory)
@@ -55,7 +59,7 @@ func processDirectory(directory string) ([]*variableFile, error) {
 	for _, file := range dirEntry {
 		path := filepath.Join(directory, file.Name())
 		if file.IsDir() {
-			sub, err := processDirectory(path)
+			sub, err := processDirectory(path, key)
 			if err != nil {
 				return nil, err
 			}
@@ -66,7 +70,7 @@ func processDirectory(directory string) ([]*variableFile, error) {
 			if strings.HasSuffix(component, ext) {
 				component = component[:len(component)-len(ext)]
 			}
-			result, err := processFile(filepath.Base(directory), component, path)
+			result, err := processFile(filepath.Base(directory), component, path, key)
 			if err != nil {
 				return nil, err
 			}
@@ -78,7 +82,7 @@ func processDirectory(directory string) ([]*variableFile, error) {
 	return results, nil
 }
 
-func processFile(cluster, component, path string) (*variableFile, error) {
+func processFile(cluster, component, path, key string) (*variableFile, error) {
 	log.Debugf("found file: %s", path)
 
 	file, err := os.Open(path)
@@ -96,6 +100,11 @@ func processFile(cluster, component, path string) (*variableFile, error) {
 	err = dec.Decode(&result.contents)
 	if err != nil {
 		return nil, fmt.Errorf("decode yaml: %w", err)
+	}
+
+	err = templatetools.Decrypt(result.contents, key, cryptutil.ReEncrypt, false)
+	if err != nil {
+		return nil, err
 	}
 
 	return result, nil
@@ -154,7 +163,7 @@ func run() error {
 		log.SetLevel(log.TraceLevel)
 	}
 
-	results, err := processDirectory(cfg.directory)
+	results, err := processDirectory(cfg.directory, cfg.decryptionKey)
 	if err != nil {
 		return err
 	}
