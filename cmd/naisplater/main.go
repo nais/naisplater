@@ -1,15 +1,20 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"github.com/nais/naisplater/pkg/cryptutil"
 	"github.com/nais/naisplater/pkg/templatetools"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/pflag"
+	"gopkg.in/yaml.v2"
+	"io"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sort"
 	"text/template"
+	"time"
 )
 
 type config struct {
@@ -22,8 +27,7 @@ type config struct {
 }
 
 func getconfig() (*config, error) {
-	cfg := &config{
-	}
+	cfg := &config{}
 
 	pflag.StringVar(&cfg.templates, "templates", cfg.templates, "directory with templates")
 	pflag.StringVar(&cfg.variables, "variables", cfg.variables, "directory with variables")
@@ -66,7 +70,56 @@ func render(inFile, outFile string, vars templatetools.Variables) error {
 
 	log.Debugf("Rendering %s to %s", inFile, outFile)
 
-	return tpl.Execute(out, vars)
+	buffer := &bytes.Buffer{}
+	err = tpl.Execute(buffer, vars)
+	if err != nil {
+		return err
+	}
+
+	err = injectLabels(buffer, out)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func injectLabels(buffer io.Reader, out io.Writer) error {
+
+	content := make(map[string]interface{})
+	yamlBytes, err := ioutil.ReadAll(buffer)
+	if err != nil {
+		return err
+	}
+	err = yaml.Unmarshal(yamlBytes, content)
+	if err != nil {
+		return err
+	}
+
+	currentTime := time.Now()
+
+	metadata, ok := content["metadata"].(map[interface{}]interface{})
+	if !ok {
+		return nil
+	}
+
+	labels, ok := metadata["labels"].(map[interface{}]interface{})
+	if !ok {
+		metadata["labels"] = make(map[interface{}]interface{})
+		labels = metadata["labels"].(map[interface{}]interface{})
+	}
+
+	labels["nais.io/created-by"] = "nais-yaml"
+	labels["nais.io/touched-at"] = currentTime.Format("20060102T150405")
+
+	contentWithLabels, err := yaml.Marshal(content)
+	if err != nil {
+		return err
+	}
+
+	_, err = io.Copy(out, bytes.NewReader(contentWithLabels))
+
+	return err
 }
 
 func variablefilename(cluster string) string {
@@ -170,7 +223,7 @@ func run() error {
 			errors++
 			log.Errorf("Render %s: %s", path, err)
 		} else {
-			log.Infof("Rendered %s", output)
+			log.Debugf("Rendered %s", output)
 		}
 	}
 
