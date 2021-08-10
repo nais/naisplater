@@ -9,7 +9,6 @@ import (
 	"github.com/spf13/pflag"
 	"gopkg.in/yaml.v2"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sort"
@@ -76,26 +75,42 @@ func render(inFile, outFile string, vars templatetools.Variables) error {
 		return err
 	}
 
-	err = injectLabels(buffer, out)
-	if err != nil {
+	if false { // flagging
+		_, err = io.Copy(out, buffer)
 		return err
+	}
+
+	decoder := yaml.NewDecoder(buffer)
+	encoder := yaml.NewEncoder(out)
+
+	defer encoder.Close()
+
+	for {
+		content := make(map[interface{}]interface{})
+		err = decoder.Decode(&content)
+		if err == io.EOF {
+			encoder.Close()
+			out.Close()
+			return nil
+		} else if err != nil {
+			return err
+		}
+
+		err = injectLabels(content)
+		if err != nil {
+			return err
+		}
+
+		err = encoder.Encode(content)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
 }
 
-func injectLabels(buffer io.Reader, out io.Writer) error {
-
-	content := make(map[string]interface{})
-	yamlBytes, err := ioutil.ReadAll(buffer)
-	if err != nil {
-		return err
-	}
-	err = yaml.Unmarshal(yamlBytes, content)
-	if err != nil {
-		return err
-	}
-
+func injectLabels(content map[interface{}]interface{}) error {
 	currentTime := time.Now()
 
 	metadata, ok := content["metadata"].(map[interface{}]interface{})
@@ -112,14 +127,7 @@ func injectLabels(buffer io.Reader, out io.Writer) error {
 	labels["nais.io/created-by"] = "nais-yaml"
 	labels["nais.io/touched-at"] = currentTime.Format("20060102T150405")
 
-	contentWithLabels, err := yaml.Marshal(content)
-	if err != nil {
-		return err
-	}
-
-	_, err = io.Copy(out, bytes.NewReader(contentWithLabels))
-
-	return err
+	return nil
 }
 
 func variablefilename(cluster string) string {
