@@ -42,8 +42,8 @@ func getconfig() (*config, error) {
 	pflag.StringVar(&cfg.cluster, "cluster", cfg.cluster, "cluster for rendering templates and variables")
 	pflag.StringVar(&cfg.decryptionKey, "decryption-key", cfg.decryptionKey, "key for decrypting variables")
 	pflag.BoolVar(&cfg.debug, "debug", cfg.debug, "enable debug output")
-	pflag.BoolVar(&cfg.addLabels, "add-labels", cfg.addLabels, "add 'nais.io/created-by: nais-yaml' and nais.io/touched-at labels")
-	pflag.StringVar(&cfg.touchedAt, "touched-at", cfg.touchedAt, "add 'nais.io/touched-at: TIMESTAMP' label")
+	pflag.BoolVar(&cfg.addLabels, "add-labels", cfg.addLabels, "add 'nais.io/created-by' and 'nais.io/touched-at' labels")
+	pflag.StringVar(&cfg.touchedAt, "touched-at", cfg.touchedAt, "use custom timestamp in 'nais.io/touched-at' label")
 	pflag.Parse()
 
 	if len(cfg.templates) == 0 {
@@ -172,6 +172,8 @@ func directoryTemplates(directory string) (map[string]string, error) {
 }
 
 func run() error {
+	errors := 0
+
 	cfg, err := getconfig()
 	if err != nil {
 		return fmt.Errorf("configuration error: %w", err)
@@ -195,7 +197,13 @@ func run() error {
 	log.Debugf("Decrypting variables")
 	err = templatetools.Decrypt(vars, cfg.decryptionKey, cryptutil.DecryptWithPassword, true)
 	if err != nil {
-		return err
+		if len(cfg.decryptionKey) == 0 {
+			log.Errorf("decrypt variable: %s", err)
+			log.Warnf("Decryption key is missing; skipping all variable decryption")
+			errors++
+		} else {
+			return err
+		}
 	}
 
 	log.Debugf("Using templates from %s", cfg.templates)
@@ -231,7 +239,6 @@ func run() error {
 	}
 	sort.Strings(filenames)
 
-	errors := 0
 	for _, filename := range filenames {
 		path := templates[filename]
 		output := filepath.Join(cfg.output, filename)
