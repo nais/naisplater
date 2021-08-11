@@ -23,14 +23,17 @@ type config struct {
 	output        string
 	cluster       string
 	decryptionKey string
-	addCreatedBy  bool
-	addTouchedAt  bool
+	addLabels     bool
+	touchedAt     string
 }
 
 func getconfig() (*config, error) {
+	currentTime := time.Now()
+	touchedAt := currentTime.Format("20060102T150405")
+
 	cfg := &config{
-		addCreatedBy: true,
-		addTouchedAt: true,
+		addLabels: true,
+		touchedAt: touchedAt,
 	}
 
 	pflag.StringVar(&cfg.templates, "templates", cfg.templates, "directory with templates")
@@ -39,8 +42,8 @@ func getconfig() (*config, error) {
 	pflag.StringVar(&cfg.cluster, "cluster", cfg.cluster, "cluster for rendering templates and variables")
 	pflag.StringVar(&cfg.decryptionKey, "decryption-key", cfg.decryptionKey, "key for decrypting variables")
 	pflag.BoolVar(&cfg.debug, "debug", cfg.debug, "enable debug output")
-	pflag.BoolVar(&cfg.addCreatedBy, "add-created-by", cfg.addCreatedBy, "add 'nais.io/created-by: nais-yaml' label")
-	pflag.BoolVar(&cfg.addTouchedAt, "add-touched-at", cfg.addTouchedAt, "add 'nais.io/touched-at: TIMESTAMP' label")
+	pflag.BoolVar(&cfg.addLabels, "add-labels", cfg.addLabels, "add 'nais.io/created-by: nais-yaml' and nais.io/touched-at labels")
+	pflag.StringVar(&cfg.touchedAt, "touched-at", cfg.touchedAt, "add 'nais.io/touched-at: TIMESTAMP' label")
 	pflag.Parse()
 
 	if len(cfg.templates) == 0 {
@@ -59,7 +62,7 @@ func getconfig() (*config, error) {
 	return cfg, nil
 }
 
-func render(inFile, outFile string, vars templatetools.Variables) error {
+func render(inFile, outFile string, vars templatetools.Variables, cfg *config) error {
 	out, err := os.OpenFile(outFile, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0644)
 	if err != nil {
 		return err
@@ -82,7 +85,7 @@ func render(inFile, outFile string, vars templatetools.Variables) error {
 		return err
 	}
 
-	if false { // flagging
+	if !cfg.addLabels {
 		_, err = io.Copy(out, buffer)
 		return err
 	}
@@ -103,7 +106,7 @@ func render(inFile, outFile string, vars templatetools.Variables) error {
 			return err
 		}
 
-		err = injectLabels(content)
+		err = injectLabels(content, cfg.touchedAt)
 		if err != nil {
 			return err
 		}
@@ -117,8 +120,7 @@ func render(inFile, outFile string, vars templatetools.Variables) error {
 	return nil
 }
 
-func injectLabels(content map[interface{}]interface{}) error {
-	currentTime := time.Now()
+func injectLabels(content map[interface{}]interface{}, touchedAt string) error {
 
 	metadata, ok := content["metadata"].(map[interface{}]interface{})
 	if !ok {
@@ -132,7 +134,7 @@ func injectLabels(content map[interface{}]interface{}) error {
 	}
 
 	labels["nais.io/created-by"] = "nais-yaml"
-	labels["nais.io/touched-at"] = currentTime.Format("20060102T150405")
+	labels["nais.io/touched-at"] = touchedAt
 
 	return nil
 }
@@ -233,7 +235,7 @@ func run() error {
 	for _, filename := range filenames {
 		path := templates[filename]
 		output := filepath.Join(cfg.output, filename)
-		err = render(path, output, vars)
+		err = render(path, output, vars, cfg)
 		if err != nil {
 			errors++
 			log.Errorf("Render %s: %s", path, err)
