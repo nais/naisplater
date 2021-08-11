@@ -190,8 +190,35 @@ func encrypt(cfg *config) error {
 	}
 
 	for _, file := range dirEntry {
+		if file.IsDir() {
+			continue
+		}
+
 		path := filepath.Join(cfg.variables, file.Name())
-		log.Infof(path)
+		vars, err := templatetools.VariablesFromFiles(path)
+		if err != nil {
+			return fmt.Errorf("%s: %w", path, err)
+		}
+		err = templatetools.CryptTransform(vars, cfg.decryptionKey, cryptutil.EncryptIfPlaintext, false)
+		if err != nil {
+			return fmt.Errorf("%s: %w", path, err)
+		}
+		tmpfile, err := os.CreateTemp(os.TempDir(), "naisplater")
+		if err != nil {
+			return err
+		}
+		err = yaml.NewEncoder(tmpfile).Encode(vars)
+		if err != nil {
+			return err
+		}
+		err = tmpfile.Close()
+		if err != nil {
+			return err
+		}
+		err = os.Rename(tmpfile.Name(), path)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -203,7 +230,7 @@ func decrypt(cfg *config) error {
 		return err
 	}
 
-	err = templatetools.Decrypt(vars, cfg.decryptionKey, cryptutil.DecryptWithPassword, false)
+	err = templatetools.CryptTransform(vars, cfg.decryptionKey, cryptutil.DecryptWithPassword, false)
 	if err != nil {
 		return err
 	}
@@ -242,7 +269,7 @@ func run() error {
 	}
 
 	log.Debugf("Decrypting variables")
-	err = templatetools.Decrypt(vars, cfg.decryptionKey, cryptutil.DecryptWithPassword, true)
+	err = templatetools.CryptTransform(vars, cfg.decryptionKey, cryptutil.DecryptWithPassword, true)
 	if err != nil {
 		if len(cfg.decryptionKey) == 0 {
 			log.Errorf("decrypt variable: %s", err)

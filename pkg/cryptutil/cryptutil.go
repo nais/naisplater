@@ -5,7 +5,6 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"errors"
-	"fmt"
 	"golang.org/x/crypto/pbkdf2"
 	"io"
 	"io/ioutil"
@@ -18,9 +17,19 @@ const keylen = 32
 
 var Magic = []byte("CRYPT")
 var ErrNotEncrypted = errors.New("not an encrypted value")
+var ErrTooMuchDataRead = errors.New("too much data read")
 
 func pbkdf(key, salt []byte) []byte {
 	return pbkdf2.Key(key, salt, iterations, keylen, sha256.New)
+}
+
+// Encrypt plaintext if not already encrypted, using EncryptWithPassword.
+func EncryptIfPlaintext(plaintext string, password string) (string, error) {
+	_, err := DecryptWithPassword(plaintext, password)
+	if err == ErrNotEncrypted {
+		return EncryptWithPassword(plaintext, password)
+	}
+	return plaintext, err
 }
 
 // Encrypt and base64-encode data using aes-256-gcm and a key derived from a password hashed with PBKDF2.
@@ -66,8 +75,10 @@ func DecryptWithPassword(ciphertext string, password string) (string, error) {
 	dec := base64.NewDecoder(base64.StdEncoding, r)
 
 	magic, err := readExactly(dec, len(Magic))
-	if err != nil {
+	if err == ErrTooMuchDataRead {
 		return "", err
+	} else if err != nil {
+		return "", ErrNotEncrypted
 	}
 	if bytes.Compare(magic, Magic) != 0 {
 		return "", ErrNotEncrypted
@@ -97,7 +108,7 @@ func readExactly(r io.Reader, length int) ([]byte, error) {
 		return nil, err
 	}
 	if nread != length {
-		return nil, fmt.Errorf("too much data read")
+		return nil, ErrTooMuchDataRead
 	}
 	return data, nil
 }

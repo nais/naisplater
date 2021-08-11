@@ -102,7 +102,7 @@ func processFile(cluster, component, path, key string) (*variableFile, error) {
 		return nil, fmt.Errorf("decode yaml: %w", err)
 	}
 
-	err = templatetools.Decrypt(result.contents, key, cryptutil.ReEncrypt, false)
+	err = templatetools.CryptTransform(result.contents, key, cryptutil.ReEncrypt, false)
 	if err != nil {
 		return nil, err
 	}

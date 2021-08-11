@@ -10,13 +10,13 @@ import (
 
 type Variables map[interface{}]interface{}
 
-type DecryptionFunc func(ciphertext, key string) (plaintext string, err error)
+type CryptFunc func(source, key string) (result string, err error)
 
-func Decrypt(vars Variables, password string, fn DecryptionFunc, translate bool) error {
+func CryptTransform(vars Variables, password string, fn CryptFunc, translate bool) error {
 	for k, v := range vars {
 		switch typed := v.(type) {
 		case Variables:
-			err := Decrypt(typed, password, fn, translate)
+			err := CryptTransform(typed, password, fn, translate)
 			if err != nil {
 				return fmt.Errorf("%s: %s", k, err)
 			}
@@ -26,10 +26,10 @@ func Decrypt(vars Variables, password string, fn DecryptionFunc, translate bool)
 				return fmt.Errorf("non-string key '%v'", k)
 			}
 			if strings.HasSuffix(key, ".enc") {
-				log.Debugf("Decrypting variable '%s'", key)
+				log.Debugf("Running crypt function on variable '%s'", key)
 				plaintext, err := fn(typed, password)
 				if err != nil {
-					return fmt.Errorf("decryption error: %w", err)
+					return fmt.Errorf("crypt error: %w", err)
 				}
 				if translate {
 					vars[key[:len(key)-4]] = plaintext
