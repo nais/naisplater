@@ -23,10 +23,15 @@ type config struct {
 	output        string
 	cluster       string
 	decryptionKey string
+	addCreatedBy  bool
+	addTouchedAt  bool
 }
 
 func getconfig() (*config, error) {
-	cfg := &config{}
+	cfg := &config{
+		addCreatedBy: true,
+		addTouchedAt: true,
+	}
 
 	pflag.StringVar(&cfg.templates, "templates", cfg.templates, "directory with templates")
 	pflag.StringVar(&cfg.variables, "variables", cfg.variables, "directory with variables")
@@ -34,6 +39,8 @@ func getconfig() (*config, error) {
 	pflag.StringVar(&cfg.cluster, "cluster", cfg.cluster, "cluster for rendering templates and variables")
 	pflag.StringVar(&cfg.decryptionKey, "decryption-key", cfg.decryptionKey, "key for decrypting variables")
 	pflag.BoolVar(&cfg.debug, "debug", cfg.debug, "enable debug output")
+	pflag.BoolVar(&cfg.addCreatedBy, "add-created-by", cfg.addCreatedBy, "add 'nais.io/created-by: nais-yaml' label")
+	pflag.BoolVar(&cfg.addTouchedAt, "add-touched-at", cfg.addTouchedAt, "add 'nais.io/touched-at: TIMESTAMP' label")
 	pflag.Parse()
 
 	if len(cfg.templates) == 0 {
