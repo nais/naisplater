@@ -58,6 +58,9 @@ func getconfig() (*config, error) {
 		return nil, fmt.Errorf("--encrypt and --decrypt are mutually exclusive")
 	}
 	if cfg.encrypt || len(cfg.decrypt) > 0 {
+		if len(cfg.decryptionKey) == 0 {
+			return nil, fmt.Errorf("--encrypt and --decrypt needs --decryption-key to work")
+		}
 		// return early for crypt-only operation
 		return cfg, nil
 	}
