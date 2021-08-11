@@ -18,6 +18,8 @@ import (
 
 type config struct {
 	debug         bool
+	encrypt       bool
+	decrypt       string
 	templates     string
 	variables     string
 	output        string
@@ -32,8 +34,8 @@ func getconfig() (*config, error) {
 	touchedAt := currentTime.Format("20060102T150405")
 
 	cfg := &config{
-		addLabels: true,
-		touchedAt: touchedAt,
+		addLabels:     true,
+		touchedAt:     touchedAt,
 		decryptionKey: os.Getenv("NAISPLATER_DECRYPTION_KEY"),
 	}
 
@@ -45,13 +47,22 @@ func getconfig() (*config, error) {
 	pflag.BoolVar(&cfg.debug, "debug", cfg.debug, "enable debug output")
 	pflag.BoolVar(&cfg.addLabels, "add-labels", cfg.addLabels, "add 'nais.io/created-by' and 'nais.io/touched-at' labels")
 	pflag.StringVar(&cfg.touchedAt, "touched-at", cfg.touchedAt, "use custom timestamp in 'nais.io/touched-at' label")
+	pflag.BoolVar(&cfg.encrypt, "encrypt", cfg.encrypt, "in-place encrypt all plaintext values with 'key.enc' keys")
+	pflag.StringVar(&cfg.decrypt, "decrypt", cfg.decrypt, "decrypt all ciphertext values with 'key.enc' keys in given file; output the whole file to STDOUT")
 	pflag.Parse()
 
-	if len(cfg.templates) == 0 {
-		return nil, fmt.Errorf("--templates required")
-	}
 	if len(cfg.variables) == 0 {
 		return nil, fmt.Errorf("--variables required")
+	}
+	if cfg.encrypt && len(cfg.decrypt) > 0 {
+		return nil, fmt.Errorf("--encrypt and --decrypt are mutually exclusive")
+	}
+	if cfg.encrypt || len(cfg.decrypt) > 0 {
+		// return early for crypt-only operation
+		return cfg, nil
+	}
+	if len(cfg.templates) == 0 {
+		return nil, fmt.Errorf("--templates required")
 	}
 	if len(cfg.output) == 0 {
 		return nil, fmt.Errorf("--output required")
@@ -172,6 +183,34 @@ func directoryTemplates(directory string) (map[string]string, error) {
 	return files, nil
 }
 
+func encrypt(cfg *config) error {
+	dirEntry, err := os.ReadDir(cfg.variables)
+	if err != nil {
+		return fmt.Errorf("read directory: %w", err)
+	}
+
+	for _, file := range dirEntry {
+		path := filepath.Join(cfg.variables, file.Name())
+		log.Infof(path)
+	}
+
+	return nil
+}
+
+func decrypt(cfg *config) error {
+	vars, err := templatetools.VariablesFromFiles(cfg.decrypt)
+	if err != nil {
+		return err
+	}
+
+	err = templatetools.Decrypt(vars, cfg.decryptionKey, cryptutil.DecryptWithPassword, false)
+	if err != nil {
+		return err
+	}
+
+	return yaml.NewEncoder(os.Stdout).Encode(vars)
+}
+
 func run() error {
 	errors := 0
 
@@ -182,6 +221,13 @@ func run() error {
 
 	if cfg.debug {
 		log.SetLevel(log.TraceLevel)
+	}
+
+	if cfg.encrypt {
+		return encrypt(cfg)
+	}
+	if len(cfg.decrypt) > 0 {
+		return decrypt(cfg)
 	}
 
 	globals := filepath.Join(cfg.variables, variablefilename(""))
