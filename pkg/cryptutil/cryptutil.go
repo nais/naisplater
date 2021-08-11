@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"golang.org/x/crypto/pbkdf2"
 	"io"
@@ -14,6 +15,9 @@ import (
 const iterations = 10000
 const saltlen = 16
 const keylen = 32
+
+var Magic = []byte("CRYPT")
+var ErrNotEncrypted = errors.New("not an encrypted value")
 
 func pbkdf(key, salt []byte) []byte {
 	return pbkdf2.Key(key, salt, iterations, keylen, sha256.New)
@@ -37,6 +41,10 @@ func EncryptWithPassword(plaintext string, password string) (string, error) {
 	enc := base64.NewEncoder(base64.StdEncoding, buf)
 	defer enc.Close()
 
+	_, err = enc.Write(Magic)
+	if err != nil {
+		return "", err
+	}
 	_, err = enc.Write(salt)
 	if err != nil {
 		return "", err
@@ -57,13 +65,17 @@ func DecryptWithPassword(ciphertext string, password string) (string, error) {
 	r := strings.NewReader(ciphertext)
 	dec := base64.NewDecoder(base64.StdEncoding, r)
 
-	salt := make([]byte, saltlen)
-	nread, err := io.ReadAtLeast(dec, salt, saltlen)
+	magic, err := readExactly(dec, len(Magic))
 	if err != nil {
 		return "", err
 	}
-	if nread != saltlen {
-		return "", fmt.Errorf("too much salt read from ciphertext")
+	if bytes.Compare(magic, Magic) != 0 {
+		return "", ErrNotEncrypted
+	}
+
+	salt, err := readExactly(dec, saltlen)
+	if err != nil {
+		return "", err
 	}
 
 	key := pbkdf([]byte(password), salt)
@@ -76,4 +88,16 @@ func DecryptWithPassword(ciphertext string, password string) (string, error) {
 	plaintext, err := Decrypt(encrypted, key)
 
 	return string(plaintext), err
+}
+
+func readExactly(r io.Reader, length int) ([]byte, error) {
+	data := make([]byte, length)
+	nread, err := io.ReadAtLeast(r, data, length)
+	if err != nil {
+		return nil, err
+	}
+	if nread != length {
+		return nil, fmt.Errorf("too much data read")
+	}
+	return data, nil
 }
