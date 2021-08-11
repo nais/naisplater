@@ -148,6 +148,14 @@ func write(destination string, results []*variableFile) error {
 	defer file.Close()
 
 	values := concat(results)
+	clusterName := ""
+	for _, v := range results {
+		if len(v.cluster) > 0 {
+			clusterName = v.cluster
+			break
+		}
+	}
+	values["clusterName"] = clusterName
 
 	enc := yamlv2.NewEncoder(file)
 	return enc.Encode(values)
