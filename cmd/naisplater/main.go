@@ -34,13 +34,14 @@ func getconfig() (*config, error) {
 	cfg := &config{
 		addLabels: true,
 		touchedAt: touchedAt,
+		decryptionKey: os.Getenv("NAISPLATER_DECRYPTION_KEY"),
 	}
 
 	pflag.StringVar(&cfg.templates, "templates", cfg.templates, "directory with templates")
 	pflag.StringVar(&cfg.variables, "variables", cfg.variables, "directory with variables")
 	pflag.StringVar(&cfg.output, "output", cfg.output, "which directory to write to")
 	pflag.StringVar(&cfg.cluster, "cluster", cfg.cluster, "cluster for rendering templates and variables")
-	pflag.StringVar(&cfg.decryptionKey, "decryption-key", cfg.decryptionKey, "key for decrypting variables")
+	pflag.StringVar(&cfg.decryptionKey, "decryption-key", cfg.decryptionKey, "key for decrypting variables ($NAISPLATER_DECRYPTION_KEY)")
 	pflag.BoolVar(&cfg.debug, "debug", cfg.debug, "enable debug output")
 	pflag.BoolVar(&cfg.addLabels, "add-labels", cfg.addLabels, "add 'nais.io/created-by' and 'nais.io/touched-at' labels")
 	pflag.StringVar(&cfg.touchedAt, "touched-at", cfg.touchedAt, "use custom timestamp in 'nais.io/touched-at' label")
