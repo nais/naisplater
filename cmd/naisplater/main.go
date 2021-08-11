@@ -110,6 +110,8 @@ func render(inFile, outFile string, vars templatetools.Variables, cfg *config) e
 
 	defer encoder.Close()
 
+	bufbytes:=buffer.Bytes()
+
 	for {
 		content := make(map[interface{}]interface{})
 		err = decoder.Decode(&content)
@@ -118,6 +120,8 @@ func render(inFile, outFile string, vars templatetools.Variables, cfg *config) e
 			out.Close()
 			return nil
 		} else if err != nil {
+			os.Stdout.Write([]byte("\n\n-----------------------\n\n"))
+			os.Stdout.Write(bufbytes)
 			return err
 		}
 
