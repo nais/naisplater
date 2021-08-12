@@ -1,0 +1,26 @@
+name: Build Naisplater
+
+on: [push]
+
+env:
+  image_base: ghcr.io/${{ github.repository }}/naisplater
+
+jobs:
+  build:
+    name: Build and push
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - name: Docker login
+        run: docker login ghcr.io -u ${GITHUB_REPOSITORY} -p ${GITHUB_TOKEN}
+      - name: Build Docker image
+        run: |
+          version=$(./version.sh)
+          docker build . --tag ${image_base}:${version} --tag ${image_base}:latest
+      - name: Push versioned docker image
+        run: |
+          version=$(./version.sh)
+          docker push ${image_base}:${version}
+      - name: Push latest docker image
+        if: github.ref == 'refs/heads/master'
+        run: docker push ${image_base}:latest
