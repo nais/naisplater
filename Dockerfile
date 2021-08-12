@@ -1,24 +1,15 @@
-FROM golang:alpine AS go-getter
+FROM golang:1.16-alpine as builder
+RUN apk add --no-cache git make curl
+ENV GOOS=linux
+ENV CGO_ENABLED=0
+ENV GO111MODULE=on
+COPY . /src
+WORKDIR /src
+RUN make test
+RUN make alpine
 
-RUN apk upgrade --update && \
-    apk add bash git
-
-RUN go get github.com/tsg/gotpl
-
-FROM alpine:3.8
-
-RUN apk upgrade --update && \
-    apk add bash curl openssl
-
-ENV KUBECTL_VERSION="1.15.2"
-ENV YQ_VERSION="2.3.0"
-
-RUN curl -Ls https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_linux_amd64 > /usr/bin/yq && \
-    chmod +x /usr/bin/yq
-
-COPY --from=go-getter /go/bin/gotpl /usr/bin/gotpl
-COPY naisplater /usr/bin/
-
-CMD bash
-
-WORKDIR /root
+FROM alpine:3
+RUN export PATH=$PATH:/app
+WORKDIR /app
+COPY --from=builder /src/bin/naisplater /app/naisplater
+ENTRYPOINT ["/app/naisplater"]
