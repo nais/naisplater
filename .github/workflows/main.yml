@@ -3,7 +3,7 @@ name: Build Naisplater
 on: [push]
 
 env:
-  image_base: ghcr.io/${{ github.repository }}/naisplater
+  image_base: ghcr.io/${{ github.repository }}
 
 jobs:
   build:
