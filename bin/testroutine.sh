@@ -23,12 +23,10 @@ go build -o bin/naisplater cmd/naisplater/*.go
 mkdir -p $NAISPLATER/vars
 bin/migrate \
     --directory $NAIS_YAML/vars/ \
-    --output $NAISPLATER/vars/ \
+    --output $NAIS_YAML/new-vars/ \
     --decryption-key $NAISPLATER_DECRYPTION_KEY
 
-# FIXME: knada
-
-for CLUSTER in ci-gcp prod-gcp labs-gcp dev-gcp prod-fss dev-fss prod-sbs dev-sbs
+for CLUSTER in knada nais-ci ci-gcp prod-gcp labs-gcp dev-gcp prod-fss dev-fss prod-sbs dev-sbs
 do
     echo "Running for $CLUSTER"
 
@@ -40,8 +38,8 @@ do
     cd $NAISPLATER
 
     bin/naisplater \
-        --variables vars \
-        --templates templates \
+        --variables $NAIS_YAML/new-vars \
+        --templates $NAIS_YAML/new-templates \
         --output output \
         --cluster $CLUSTER \
         --add-labels=false
