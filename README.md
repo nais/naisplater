@@ -24,6 +24,15 @@ Usage of naisplater:
       --variables string        directory with variables
 ```
 
+## Building
+
+Requires Go 1.16.
+
+```
+make
+sudo install bin/naisplater /usr/local/bin
+```
+
 ## Encrypted variables
 
 If you have secret variables, you can encrypt them and keep them under version control like any other variable.

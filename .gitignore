@@ -1,4 +1,5 @@
 test/out/
 out/
 hack/
+/bin/
 .idea
