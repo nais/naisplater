@@ -54,7 +54,7 @@ func getconfig() (*config, error) {
 	pflag.BoolVar(&cfg.validate, "validate", cfg.validate, "render all templates for all clusters in-memory and check for syntax/runtime errors")
 	pflag.Parse()
 
-	if len(cfg.variables) == 0 {
+	if len(cfg.decrypt) == 0 && len(cfg.variables) == 0 {
 		return nil, fmt.Errorf("--variables required")
 	}
 	if cfg.validate && (cfg.encrypt || len(cfg.decrypt) > 0) {
@@ -311,7 +311,7 @@ func run(cfg *config) error {
 	overrides, err := directoryTemplates(clusterTemplates)
 	if err != nil {
 		if os.IsNotExist(err) {
-			log.Warnf("No cluster-specific template directory for '%s'", cfg.cluster)
+			log.Debugf("No cluster-specific template directory for '%s'", cfg.cluster)
 		} else {
 			return err
 		}
