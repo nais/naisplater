@@ -12,6 +12,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 	"text/template"
 	"time"
 )
@@ -27,6 +28,7 @@ type config struct {
 	decryptionKey string
 	addLabels     bool
 	touchedAt     string
+	validate      bool
 }
 
 func getconfig() (*config, error) {
@@ -49,10 +51,14 @@ func getconfig() (*config, error) {
 	pflag.StringVar(&cfg.touchedAt, "touched-at", cfg.touchedAt, "use custom timestamp in 'nais.io/touched-at' label")
 	pflag.BoolVar(&cfg.encrypt, "encrypt", cfg.encrypt, "in-place encrypt all plaintext values with 'key.enc' keys")
 	pflag.StringVar(&cfg.decrypt, "decrypt", cfg.decrypt, "decrypt all ciphertext values with 'key.enc' keys in given file; output the whole file to STDOUT")
+	pflag.BoolVar(&cfg.validate, "validate", cfg.validate, "render all templates for all clusters in-memory and check for syntax/runtime errors")
 	pflag.Parse()
 
 	if len(cfg.variables) == 0 {
 		return nil, fmt.Errorf("--variables required")
+	}
+	if cfg.validate && (cfg.encrypt || len(cfg.decrypt) > 0) {
+		return nil, fmt.Errorf("--validate cannot be used together with --encrypt or --decrypt")
 	}
 	if cfg.encrypt && len(cfg.decrypt) > 0 {
 		return nil, fmt.Errorf("--encrypt and --decrypt are mutually exclusive")
@@ -67,11 +73,15 @@ func getconfig() (*config, error) {
 	if len(cfg.templates) == 0 {
 		return nil, fmt.Errorf("--templates required")
 	}
-	if len(cfg.output) == 0 {
-		return nil, fmt.Errorf("--output required")
+	if cfg.validate {
+		// no --output or --cluster required for validation
+		return cfg, nil
 	}
 	if len(cfg.cluster) == 0 {
 		return nil, fmt.Errorf("--cluster required")
+	}
+	if len(cfg.output) == 0 {
+		return nil, fmt.Errorf("--output required")
 	}
 
 	return cfg, nil
@@ -110,7 +120,7 @@ func render(inFile, outFile string, vars templatetools.Variables, cfg *config) e
 
 	defer encoder.Close()
 
-	bufbytes:=buffer.Bytes()
+	bufbytes := buffer.Bytes()
 
 	for {
 		content := make(map[interface{}]interface{})
@@ -190,6 +200,25 @@ func directoryTemplates(directory string) (map[string]string, error) {
 	return files, nil
 }
 
+func allClusters(cfg *config) ([]string, error) {
+	dirEntry, err := os.ReadDir(cfg.variables)
+	if err != nil {
+		return nil, fmt.Errorf("read directory: %w", err)
+	}
+
+	clusters := make([]string, 0)
+	for _, file := range dirEntry {
+		if file.IsDir() {
+			continue
+		}
+		if strings.HasSuffix(file.Name(), ".yaml") {
+			clusters = append(clusters, file.Name()[:len(file.Name())-5])
+		}
+	}
+
+	return clusters, nil
+}
+
 func encrypt(cfg *config) error {
 	dirEntry, err := os.ReadDir(cfg.variables)
 	if err != nil {
@@ -245,24 +274,8 @@ func decrypt(cfg *config) error {
 	return yaml.NewEncoder(os.Stdout).Encode(vars)
 }
 
-func run() error {
+func run(cfg *config) error {
 	errors := 0
-
-	cfg, err := getconfig()
-	if err != nil {
-		return fmt.Errorf("configuration error: %w", err)
-	}
-
-	if cfg.debug {
-		log.SetLevel(log.TraceLevel)
-	}
-
-	if cfg.encrypt {
-		return encrypt(cfg)
-	}
-	if len(cfg.decrypt) > 0 {
-		return decrypt(cfg)
-	}
 
 	globals := filepath.Join(cfg.variables, variablefilename(""))
 	locals := filepath.Join(cfg.variables, variablefilename(cfg.cluster))
@@ -308,21 +321,26 @@ func run() error {
 
 	merge(templates, overrides)
 
-	log.Debugf("Using output directory %s", cfg.output)
-	err = os.MkdirAll(cfg.output, 0755)
-	if err != nil {
-		return err
-	}
-
 	filenames := make([]string, 0, len(templates))
 	for k := range templates {
 		filenames = append(filenames, k)
 	}
 	sort.Strings(filenames)
 
+	if !cfg.validate {
+		log.Debugf("Using output directory %s", cfg.output)
+		err = os.MkdirAll(cfg.output, 0755)
+		if err != nil {
+			return err
+		}
+	}
+
 	for _, filename := range filenames {
 		path := templates[filename]
 		output := filepath.Join(cfg.output, filename)
+		if cfg.validate {
+			output = "/dev/null"
+		}
 		err = render(path, output, vars, cfg)
 		if err != nil {
 			errors++
@@ -339,8 +357,61 @@ func run() error {
 	return nil
 }
 
+func validate(cfg *config) error {
+	clusters, err := allClusters(cfg)
+	if err != nil {
+		return err
+	}
+
+	errors := 0
+	for _, cluster := range clusters {
+		log.Infof("Running validation for cluster '%s'", cluster)
+
+		cfg.cluster = cluster
+		err = run(cfg)
+
+		if err != nil {
+			log.Errorf("Validation failed for cluster '%s': %s", cluster, err)
+			errors++
+		}
+	}
+
+	if errors > 0 {
+		return fmt.Errorf("%d clusters failed validation", errors)
+	}
+
+	log.Infof("All clusters rendered successfully")
+
+	return nil
+}
+
+func runner() error {
+	cfg, err := getconfig()
+	if err != nil {
+		return fmt.Errorf("configuration error: %w", err)
+	}
+
+	if cfg.debug {
+		log.SetLevel(log.TraceLevel)
+	}
+
+	if cfg.encrypt {
+		return encrypt(cfg)
+	}
+
+	if len(cfg.decrypt) > 0 {
+		return decrypt(cfg)
+	}
+
+	if cfg.validate {
+		return validate(cfg)
+	}
+
+	return run(cfg)
+}
+
 func main() {
-	err := run()
+	err := runner()
 	if err != nil {
 		log.Errorf("fatal: %s", err)
 		os.Exit(1)
