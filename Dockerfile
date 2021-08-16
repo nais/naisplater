@@ -8,7 +8,7 @@ WORKDIR /src
 RUN make test
 RUN make alpine
 
-FROM alpine:3.8
+FROM alpine:3
 RUN export PATH=$PATH:/app
 WORKDIR /app
 COPY --from=builder /src/bin/naisplater /app/naisplater
