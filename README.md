@@ -29,8 +29,7 @@ Usage of naisplater:
 Requires Go 1.16.
 
 ```
-make
-sudo install bin/naisplater /usr/local/bin
+make install
 ```
 
 ## Encrypted variables
