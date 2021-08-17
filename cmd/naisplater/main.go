@@ -170,7 +170,7 @@ func injectLabels(content map[interface{}]interface{}, touchedAt string) error {
 
 func variablefilename(cluster string) string {
 	if len(cluster) == 0 {
-		return "vars.yaml"
+		return "global.yaml"
 	}
 	return cluster + ".yaml"
 }
