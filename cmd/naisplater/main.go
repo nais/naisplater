@@ -239,7 +239,7 @@ func encrypt(cfg *config) error {
 		if err != nil {
 			return fmt.Errorf("%s: %w", path, err)
 		}
-		tmpfile, err := os.CreateTemp(os.TempDir(), "naisplater")
+		tmpfile, err := os.CreateTemp(cfg.variables, ".naisplater")
 		if err != nil {
 			return err
 		}
