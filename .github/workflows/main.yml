@@ -1,6 +1,9 @@
 name: Build Naisplater
 
-on: [push]
+on:
+  push:
+    paths-ignore:
+      - '.github/workflows/binary.yml'
 
 env:
   image_base: ghcr.io/${{ github.repository }}
