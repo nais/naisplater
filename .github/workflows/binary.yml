@@ -14,3 +14,4 @@ jobs:
           goos: linux
           goarch: amd64
           project_path: ./cmd/naisplater
+          release_tag: v1
