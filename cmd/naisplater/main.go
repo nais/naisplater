@@ -94,22 +94,24 @@ func render(inFile, outFile string, vars templatetools.Variables, cfg *config) e
 	}
 	defer out.Close()
 
-	tpl, err := template.ParseFiles(inFile)
-	if err != nil {
-		return err
-	}
+	tpl := template.New(filepath.Base(inFile))
 
 	// Register helper functions
 	tpl = tpl.Funcs(template.FuncMap{
 		"Join": strings.Join,
-		"FlattenMap": func(m map[string]interface{}) []interface{} {
-			result := make([]interface{}, 0, len(m))
-			for _, value := range m {
-				result = append(result, value)
+		"FlattenMap": func(vars templatetools.Variables) []string {
+			result := make([]string, 0, len(vars))
+			for _, value := range vars {
+				result = append(result, fmt.Sprintf("%s", value))
 			}
 			return result
 		},
 	})
+
+	tpl, err = tpl.ParseFiles(inFile)
+	if err != nil {
+		return err
+	}
 
 	// Nice API. Fail on undefined template variables.
 	tpl.Option("missingkey=error")
