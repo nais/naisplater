@@ -99,6 +99,18 @@ func render(inFile, outFile string, vars templatetools.Variables, cfg *config) e
 		return err
 	}
 
+	// Register helper functions
+	tpl = tpl.Funcs(template.FuncMap{
+		"Join": strings.Join,
+		"FlattenMap": func(m map[string]interface{}) []interface{} {
+			result := make([]interface{}, 0, len(m))
+			for _, value := range m {
+				result = append(result, value)
+			}
+			return result
+		},
+	})
+
 	// Nice API. Fail on undefined template variables.
 	tpl.Option("missingkey=error")
 
