@@ -26,7 +26,7 @@ bin/migrate \
     --output $NAIS_YAML/new-vars/ \
     --decryption-key $NAISPLATER_DECRYPTION_KEY
 
-for CLUSTER in knada nais-ci ci-gcp prod-gcp labs-gcp dev-gcp prod-fss dev-fss prod-sbs dev-sbs
+for CLUSTER in knada nais-ci ci-gcp prod-gcp labs-gcp dev-gcp prod-fss dev-fss prod-sbs
 do
     echo "Running for $CLUSTER"
 
